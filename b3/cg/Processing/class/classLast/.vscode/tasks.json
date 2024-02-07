@@ -1,0 +1,23 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "Run",
+        "command": "C:\\Users\\cotan\\Documents\\program\\tmu\\b3\\cg\\processing-4.3\\processing-java.exe",
+        "type": "process",
+        "args": [
+          "--force",
+          "--sketch=C:\\Users\\cotan\\Documents\\program\\tmu\\b3\\cg\\Processing\\class\\classLast",
+          "--run"
+        ],
+        "group": {
+          "kind": "build",
+          "isDefault": true
+        },
+        "presentation": {
+          "reveal": "always",
+          "panel": "new"
+        }
+      }
+    ]
+}
