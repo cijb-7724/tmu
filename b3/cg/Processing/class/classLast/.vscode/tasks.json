@@ -7,7 +7,12 @@
         "type": "process",
         "args": [
           "--force",
-          "--sketch=C:\\Users\\cotan\\Documents\\program\\tmu\\b3\\cg\\Processing\\class\\classLast",
+          "--sketch=C:\\Users\\cotan\\Documents\\program\\tmu\\b3\\cg\\Processing\\class\\classLast\\cylinder",
+          "--sketch=C:\\Users\\cotan\\Documents\\program\\tmu\\b3\\cg\\Processing\\class\\classLast\\thread",
+          "--sketch=C:\\Users\\cotan\\Documents\\program\\tmu\\b3\\cg\\Processing\\class\\classLast\\nn_test",
+          "--sketch=C:\\Users\\cotan\\Documents\\program\\tmu\\b3\\cg\\Processing\\class\\classLast\\nn_visual",
+          "--sketch=C:\\Users\\cotan\\Documents\\program\\tmu\\b3\\cg\\Processing\\class\\classLast\\study_java_grammar",
+          
           "--run"
         ],
         "group": {
