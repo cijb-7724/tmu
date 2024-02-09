@@ -25,7 +25,7 @@ void draw() {
   translate(width/2, width/4, 0);
   pushMatrix();
   rotateX(PI/5);
-  rotateZ(h/100.0);
+  rotateZ(h/400.0);
   ++h;
   
   
