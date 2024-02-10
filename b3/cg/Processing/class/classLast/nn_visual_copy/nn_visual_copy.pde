@@ -21,20 +21,21 @@ int blue_shi = 100;
 
 int[] shi = {10, 10, 50};
 
-ArrayList<ArrayList<Double>> x = initial_AAD(0, 0, 0);
-ArrayList<ArrayList<Double>> t = initial_AAD(0, 0, 0);
-double eta = 0.03, attenuation = 0.7;
-int n = 1000;
-int show_interval = 1000;
-int learning_plan = 1000;
-int loop = 4000;
-int batch_size = 32;
-ArrayList<Integer> nn_form = new ArrayList<> (Arrays.asList(2, 6, 8, 4, 1));
-int depth = nn_form.size()-1;
+ArrayList<ArrayList<Double>> G_x = initial_AAD(0, 0, 0);
+ArrayList<ArrayList<Double>> G_t = initial_AAD(0, 0, 0);
+double G_eta = 0.03, G_attenuation = 0.7;
+int G_n = 1000;
+int G_show_interval = 1000;
+int G_learning_plan = 1000;
+int G_loop = 4000;
+int G_loop_i = 0;
+int G_batch_size = 32;
+ArrayList<Integer> G_nn_form = new ArrayList<> (Arrays.asList(2, 6, 8, 4, 1));
+int G_depth = G_nn_form.size()-1;
 
 Layer layer = new Layer();
-ArrayList<Layer> nn = layer.createLayerList(depth);
-ArrayList<Integer> id = new ArrayList<>();
+ArrayList<Layer> G_nn = layer.createLayerList(G_depth);
+ArrayList<Integer> G_id = new ArrayList<>();
 
 boolean isProcessing = false;
 
@@ -42,39 +43,42 @@ void setup() {
   size(1000, 1000, P3D);
   p = new Properties();
   lights();
-  main();
+  //main();
 }
 
 int time = 0;
 int rotate_speed = 200;
 
-//void draw() {
-//  draw_nn();
-  //++time;
-  //if (time == 360*rotate_speed) time = 0;
-//}
-
 void draw() {
-  // もし処理中でなければ、時間のかかる処理を開始する
-  if (!isProcessing) {
-    // 時間のかかる処理を開始するための関数を呼び出す
-    //startLongProcess();
-    main();
-    isProcessing = true;
-  }
-  //++h;
-  //if (h % 100 == 0) println("here " + h);
-  // 処理が終了したら描画を行う
-  if (!isProcessing) {
-    println("Drawing..."); // 描画開始のログを出力
-    // 描画処理を行う関数を呼び出す
-    //render();
-    draw_nn();
-    println("Drawn"); // 描画完了のログを出力
-  }
+  main_setup();
+  learn();
+  test();
+  draw_nn();
   ++time;
   if (time == 360*rotate_speed) time = 0;
 }
+
+//void draw() {
+//  // もし処理中でなければ、時間のかかる処理を開始する
+//  if (!isProcessing) {
+//    // 時間のかかる処理を開始するための関数を呼び出す
+//    //startLongProcess();
+//    main();
+//    isProcessing = true;
+//  }
+//  //++h;
+//  //if (h % 100 == 0) println("here " + h);
+//  // 処理が終了したら描画を行う
+//  if (!isProcessing) {
+//    println("Drawing..."); // 描画開始のログを出力
+//    // 描画処理を行う関数を呼び出す
+//    //render();
+//    draw_nn();
+//    println("Drawn"); // 描画完了のログを出力
+//  }
+//  ++time;
+//  if (time == 360*rotate_speed) time = 0;
+//}
 
 void draw_nn() {
   background(255);
@@ -106,7 +110,7 @@ void draw_nn() {
     sphere(30);
     popMatrix();
   }
- 
+
   for (int i=0; i<num; ++i) {
     for (int j=0; j<6; ++j) {
       stroke(0, 255, 0);
@@ -115,7 +119,7 @@ void draw_nn() {
       noStroke();
     }
   }
-  
+
 
   translate(width_sph, 0, 0);
 
@@ -130,7 +134,7 @@ void draw_nn() {
     sphere(30);
     popMatrix();
   }
-  
+
   for (int i=0; i<num; ++i) {
     for (int j=0; j<8; ++j) {
       stroke(0, 255, 0);
@@ -139,7 +143,7 @@ void draw_nn() {
       noStroke();
     }
   }
-  
+
 
   translate(width_sph, 0, 0);
 
@@ -154,7 +158,7 @@ void draw_nn() {
     sphere(30);
     popMatrix();
   }
-  
+
   for (int i=0; i<num; ++i) {
     for (int j=0; j<4; ++j) {
       stroke(0, 255, 0);
@@ -177,14 +181,14 @@ void draw_nn() {
     sphere(30);
     popMatrix();
   }
-  
+
   for (int i=0; i<num; ++i) {
     stroke(0, 255, 0);
     strokeWeight(4);
     line(0, (int)(r1*Math.cos(2*Math.PI/num*i)), (int)(r1*Math.sin(2*Math.PI/num*i)), width_sph, 0, 0);
     noStroke();
   }
-  
+
   translate(width_sph, 0, 0);
   ambient(red_amb[0], red_amb[1], red_amb[2]);
   specular(red_spe[0], red_spe[1], red_spe[2]);
@@ -195,43 +199,10 @@ void draw_nn() {
 }
 
 
-void drawCylinder(PVector p1, PVector p2, float r) {
-  PVector d = PVector.sub(p2, p1);
-  float cylLength = d.mag();
-  float a = atan2(d.y, d.x);
-  float zAngle = atan2(d.z, dist(p1.x, p1.y, p2.x, p2.y));
-
-  pushMatrix();
-  translate(p1.x, p1.y, p1.z);
-  rotateZ(a);
-  rotateY(zAngle);
-  drawCylinderSurface(r, cylLength);
-  popMatrix();
-}
-
-void drawCylinderSurface(float r, float h) {
-  int detail = 24;
-  for (int i = 0; i < detail; i++) {
-    float theta1 = map(i, 0, detail, 0, TWO_PI);
-    float theta2 = map(i + 1, 0, detail, 0, TWO_PI);
-
-    float x1 = cos(theta1) * r;
-    float y1 = sin(theta1) * r;
-    float x2 = cos(theta2) * r;
-    float y2 = sin(theta2) * r;
-
-    line(x1, y1, 0, x2, y2, 0);
-    line(x1, y1, h, x2, y2, h);
-    line(x1, y1, 0, x1, y1, h);
-  }
-}
 
 
 
-
-
-
-
+//=============================================================================================
 
 
 
@@ -242,6 +213,185 @@ void drawCylinderSurface(float r, float h) {
 
 
 //=============================================================================================
+public class Layer {
+  ArrayList<ArrayList<Double>> w;
+  ArrayList<ArrayList<Double>> b;
+  ArrayList<ArrayList<Double>> a;
+  ArrayList<ArrayList<Double>> x;
+  ArrayList<ArrayList<Double>> delta;
+  ArrayList<ArrayList<Double>> rw;
+  ArrayList<ArrayList<Double>> rb;
+
+  public Layer() {
+    w = new ArrayList<> ();
+    b = new ArrayList<> ();
+    a = new ArrayList<> ();
+    x = new ArrayList<> ();
+    delta = new ArrayList<> ();
+    rw = new ArrayList<> ();
+    rb = new ArrayList<> ();
+  }
+  public ArrayList<Layer> createLayerList(int depth) {
+    ArrayList<Layer> nn = new ArrayList<>();
+    for (int i=0; i<depth; ++i) {
+      nn.add(new Layer());
+    }
+    return nn;
+  }
+}
+
+void main_setup() {
+  for (int i=0; i<G_n; ++i) {
+    G_id.add(i);
+  }
+  //Heの初期化
+  for (int i=0; i<G_depth; ++i) {
+    G_nn.get(i).w = initial_AAD(G_nn_form.get(i), G_nn_form.get(i+1), 0);
+    G_nn.get(i).b = initial_AAD(G_batch_size, G_nn_form.get(i+1), 0);
+    make_initial_value(G_nn.get(i).w, 0, Math.sqrt(2.0/G_nn_form.get(i)));
+    make_initial_value(G_nn.get(i).b, 0, Math.sqrt(2.0/G_nn_form.get(i)));
+    G_nn.get(i).b = expansion_bias(G_nn.get(i).b, G_batch_size);
+  }
+  make_data(G_x, G_t, G_n);
+}
+
+void learn() {
+  if (G_loop_i >= G_loop) return;
+  ArrayList<ArrayList<Double>> x0 = initial_AAD(0, 0, 0);
+  ArrayList<ArrayList<Double>> t0 = initial_AAD(0, 0, 0);
+  Collections.shuffle(G_id, random);
+  shuffle_AAD(G_t, G_id);
+  shuffle_AAD(G_x, G_id);
+
+  //choice top batch_size
+  for (int j=0; j<G_batch_size; ++j) {
+    x0.add(new ArrayList<>(G_x.get(j)));
+    t0.add(new ArrayList<>(G_t.get(j)));
+  }
+
+  //forward propagation
+  for (int k=0; k<G_depth; ++k) {
+    if (k == 0) G_nn.get(k).a = matrix_add(matrix_multi(x0, G_nn.get(k).w), G_nn.get(k).b);
+    else G_nn.get(k).a = matrix_add(matrix_multi(G_nn.get(k-1).x, G_nn.get(k).w), G_nn.get(k).b);
+    if (k < G_depth-1) G_nn.get(k).x = hm_tanh(G_nn.get(k).a);
+    else G_nn.get(k).x = hm_identity(G_nn.get(k).a);
+  }
+
+  //back propagation
+  for (int k=G_depth-1; k>=0; --k) {
+    if (k == G_depth-1) {
+      ArrayList<ArrayList<Double>> r_fL_xk = calc_r_MSE(G_nn.get(k).x, t0);
+      ArrayList<ArrayList<Double>> r_hk_ak = calc_r_identity(G_nn.get(k).x);
+      G_nn.get(k).delta = matrix_adm_multi(r_fL_xk, r_hk_ak);
+    } else {
+      ArrayList<ArrayList<Double>> r_h_a = calc_r_tanh(G_nn.get(k).a);
+      G_nn.get(k).delta = matrix_adm_multi(r_h_a, matrix_multi(G_nn.get(k+1).delta, matrix_t(G_nn.get(k+1).w)));
+    }
+
+    G_nn.get(k).rb = calc_r_bias(G_nn.get(k).b, G_nn.get(k).delta);
+    if (k != 0) G_nn.get(k).rw = matrix_multi(matrix_t(G_nn.get(k-1).x), G_nn.get(k).delta);
+    else G_nn.get(k).rw = matrix_multi(matrix_t(x0), G_nn.get(k).delta);
+  }
+  //update parameters
+  for (int k=0; k<G_depth; ++k) {
+    update_weights(G_nn.get(k).w, G_nn.get(k).rw, G_eta);
+    update_weights(G_nn.get(k).b, G_nn.get(k).rb, G_eta);
+  }
+
+  //update learning plan
+  if ((G_loop_i+1) % G_learning_plan == 0) G_eta *= G_attenuation;
+
+  if (G_loop_i % G_show_interval == 0) {
+    print(G_loop_i + " MSE ");
+    println(hm_MSE(G_nn.get(G_depth-1).x, t0));
+  }
+
+  //println("===========================i= "+i);
+  //show_all(nn, depth);
+  ++G_loop_i;
+}
+
+void test() {
+  //================================================
+  // test set
+  for (int i=0; i<40; ++i) print("=");
+  println(" ");
+  println("test set");
+  for (int i=0; i<G_depth; ++i) {
+    G_nn.get(i).b = expansion_bias(G_nn.get(i).b, G_n);
+  }
+  make_data(G_x, G_t, G_n);
+  //formard propagation
+  for (int k=0; k<G_depth; ++k) {
+    if (k == 0) G_nn.get(k).a = matrix_add(matrix_multi(G_x, G_nn.get(k).w), G_nn.get(k).b);
+    else G_nn.get(k).a = matrix_add(matrix_multi(G_nn.get(k-1).x, G_nn.get(k).w), G_nn.get(k).b);
+    if (k < G_depth-1) G_nn.get(k).x = hm_tanh(G_nn.get(k).a);
+    else G_nn.get(k).x = hm_identity(G_nn.get(k).a);
+  }
+  println("MSE = " + hm_MSE(G_nn.get(G_depth-1).x, G_t));
+  for (int i=0; i<40; ++i) print("=");
+  println(" ");
+  //================================================
+}
+
+void main() {
+
+  println("first parameters");
+  //for (int i=0; i<depth; ++i) {
+  //  println("w " + i);
+  //  matrix_show(nn.get(i).w);
+  //}
+  //for (int i=0; i<depth; ++i) {
+  //  println("b " + i);
+  //  matrix_show_b(nn.get(i).b);
+  //}
+  main_setup();
+
+
+  //learn
+  learn();
+  for (int i=0; i<G_loop; ++i) {
+    learn();
+  }
+
+  //================================================
+  // train set
+  for (int i=0; i<40; ++i) print("=");
+  println(" ");
+  println("train set");
+  for (int i=0; i<G_depth; ++i) {
+    G_nn.get(i).b = expansion_bias(G_nn.get(i).b, G_n);
+  }
+  //formard propagation
+  for (int k=0; k<G_depth; ++k) {
+    if (k == 0) G_nn.get(k).a = matrix_add(matrix_multi(G_x, G_nn.get(k).w), G_nn.get(k).b);
+    else G_nn.get(k).a = matrix_add(matrix_multi(G_nn.get(k-1).x, G_nn.get(k).w), G_nn.get(k).b);
+    if (k < G_depth-1) G_nn.get(k).x = hm_tanh(G_nn.get(k).a);
+    else G_nn.get(k).x = hm_identity(G_nn.get(k).a);
+  }
+  println("MSE = " + hm_MSE(G_nn.get(G_depth-1).x, G_t));
+  for (int i=0; i<40; ++i) print("=");
+  println(" ");
+  //================================================
+
+  //================================================
+  // test set
+  //for (int i=0; i<40; ++i) print("=");
+  //println(" ");
+  //println("test set");
+  //make_data(x, t, n);
+  ////formard propagation
+  //for (int k=0; k<depth; ++k) {
+  //  if (k == 0) nn.get(k).a = matrix_add(matrix_multi(x, nn.get(k).w), nn.get(k).b);
+  //  else nn.get(k).a = matrix_add(matrix_multi(nn.get(k-1).x, nn.get(k).w), nn.get(k).b);
+  //  if (k < depth-1) nn.get(k).x = hm_tanh(nn.get(k).a);
+  //  else nn.get(k).x = hm_identity(nn.get(k).a);
+  //}
+  //println("MSE = " + hm_MSE(nn.get(depth-1).x, t));
+  //for (int i=0; i<40; ++i) print("=");
+  //println(" ");
+  //================================================
+}
 
 void mouseReleased() {
   p.release();
@@ -510,163 +660,20 @@ public class Handle {
   }
 }
 
-//=============================================================================================
-public class Layer {
-  ArrayList<ArrayList<Double>> w;
-  ArrayList<ArrayList<Double>> b;
-  ArrayList<ArrayList<Double>> a;
-  ArrayList<ArrayList<Double>> x;
-  ArrayList<ArrayList<Double>> delta;
-  ArrayList<ArrayList<Double>> rw;
-  ArrayList<ArrayList<Double>> rb;
 
-  public Layer() {
-    w = new ArrayList<> ();
-    b = new ArrayList<> ();
-    a = new ArrayList<> ();
-    x = new ArrayList<> ();
-    delta = new ArrayList<> ();
-    rw = new ArrayList<> ();
-    rb = new ArrayList<> ();
-  }
-  public ArrayList<Layer> createLayerList(int depth) {
-    ArrayList<Layer> nn = new ArrayList<>();
-    for (int i=0; i<depth; ++i) {
-      nn.add(new Layer());
-    }
-    return nn;
-  }
-}
-
-void learn() {
-  ;
-}
-
-void main_setup() {
-  for (int i=0; i<n; ++i) {
-    id.add(i);
-  }
-
-  //Heの初期化
-  for (int i=0; i<depth; ++i) {
-    nn.get(i).w = initial_AAD(nn_form.get(i), nn_form.get(i+1), 0);
-    nn.get(i).b = initial_AAD(batch_size, nn_form.get(i+1), 0);
-    make_initial_value(nn.get(i).w, 0, Math.sqrt(2.0/nn_form.get(i)));
-    make_initial_value(nn.get(i).b, 0, Math.sqrt(2.0/nn_form.get(i)));
-    nn.get(i).b = expansion_bias(nn.get(i).b, batch_size);
-  }
-}
-void main() {
-  
-  
-
-  println("first parameters");
-  for (int i=0; i<depth; ++i) {
-    println("w " + i);
-    matrix_show(nn.get(i).w);
-  }
-  for (int i=0; i<depth; ++i) {
-    println("b " + i);
-    matrix_show_b(nn.get(i).b);
-  }
-
-  make_data(x, t, n);
-
-  //learn
-  for (int i=0; i<loop; ++i) {
-    ArrayList<ArrayList<Double>> x0 = initial_AAD(0, 0, 0);
-    ArrayList<ArrayList<Double>> t0 = initial_AAD(0, 0, 0);
-    Collections.shuffle(id, random);
-    shuffle_AAD(t, id);
-    shuffle_AAD(x, id);
-
-    //choice top batch_size
-    for (int j=0; j<batch_size; ++j) {
-      x0.add(new ArrayList<>(x.get(j)));
-      t0.add(new ArrayList<>(t.get(j)));
-    }
-
-    //forward propagation
-    for (int k=0; k<depth; ++k) {
-      if (k == 0) nn.get(k).a = matrix_add(matrix_multi(x0, nn.get(k).w), nn.get(k).b);
-      else nn.get(k).a = matrix_add(matrix_multi(nn.get(k-1).x, nn.get(k).w), nn.get(k).b);
-      if (k < depth-1) nn.get(k).x = hm_tanh(nn.get(k).a);
-      else nn.get(k).x = hm_identity(nn.get(k).a);
-    }
-
-    //back propagation
-    for (int k=depth-1; k>=0; --k) {
-      if (k == depth-1) {
-        ArrayList<ArrayList<Double>> r_fL_xk = calc_r_MSE(nn.get(k).x, t0);
-        ArrayList<ArrayList<Double>> r_hk_ak = calc_r_identity(nn.get(k).x);
-        nn.get(k).delta = matrix_adm_multi(r_fL_xk, r_hk_ak);
-      } else {
-        ArrayList<ArrayList<Double>> r_h_a = calc_r_tanh(nn.get(k).a);
-        nn.get(k).delta = matrix_adm_multi(r_h_a, matrix_multi(nn.get(k+1).delta, matrix_t(nn.get(k+1).w)));
-      }
-
-      nn.get(k).rb = calc_r_bias(nn.get(k).b, nn.get(k).delta);
-      if (k != 0) nn.get(k).rw = matrix_multi(matrix_t(nn.get(k-1).x), nn.get(k).delta);
-      else nn.get(k).rw = matrix_multi(matrix_t(x0), nn.get(k).delta);
-    }
-
-    //update parameters
-    for (int k=0; k<depth; ++k) {
-      update_weights(nn.get(k).w, nn.get(k).rw, eta);
-      update_weights(nn.get(k).b, nn.get(k).rb, eta);
-    }
+//============================================================================================
 
 
 
-    //update learning plan
-    if ((i+1) % learning_plan == 0) eta *= attenuation;
 
-    if (i % show_interval == 0) {
-      print(i + " MSE ");
-      println(hm_MSE(nn.get(depth-1).x, t0));
-    }
 
-    //println("===========================i= "+i);
-    //show_all(nn, depth);
-  }
-  //================================================
-  // train set
-  for (int i=0; i<40; ++i) print("=");
-  println(" ");
-  println("train set");
-  for (int i=0; i<depth; ++i) {
-    nn.get(i).b = expansion_bias(nn.get(i).b, n);
-  }
-  //formard propagation
-  for (int k=0; k<depth; ++k) {
-    if (k == 0) nn.get(k).a = matrix_add(matrix_multi(x, nn.get(k).w), nn.get(k).b);
-    else nn.get(k).a = matrix_add(matrix_multi(nn.get(k-1).x, nn.get(k).w), nn.get(k).b);
-    if (k < depth-1) nn.get(k).x = hm_tanh(nn.get(k).a);
-    else nn.get(k).x = hm_identity(nn.get(k).a);
-  }
-  println("MSE = " + hm_MSE(nn.get(depth-1).x, t));
-  for (int i=0; i<40; ++i) print("=");
-  println(" ");
-  //================================================
 
-  //================================================
-  // test set
-  for (int i=0; i<40; ++i) print("=");
-  println(" ");
-  println("test set");
-  make_data(x, t, n);
-  //formard propagation
-  for (int k=0; k<depth; ++k) {
-    if (k == 0) nn.get(k).a = matrix_add(matrix_multi(x, nn.get(k).w), nn.get(k).b);
-    else nn.get(k).a = matrix_add(matrix_multi(nn.get(k-1).x, nn.get(k).w), nn.get(k).b);
-    if (k < depth-1) nn.get(k).x = hm_tanh(nn.get(k).a);
-    else nn.get(k).x = hm_identity(nn.get(k).a);
-  }
-  println("MSE = " + hm_MSE(nn.get(depth-1).x, t));
-  for (int i=0; i<40; ++i) print("=");
-  println(" ");
-  //================================================
-}
+
+
+
+
+
+
 
 
 
