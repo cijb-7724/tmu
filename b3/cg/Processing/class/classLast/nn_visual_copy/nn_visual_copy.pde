@@ -23,14 +23,15 @@ int[] shi = {10, 10, 50};
 
 ArrayList<ArrayList<Double>> G_x = initial_AAD(0, 0, 0);
 ArrayList<ArrayList<Double>> G_t = initial_AAD(0, 0, 0);
-double G_eta = 0.03, G_attenuation = 0.7;
-int G_n = 1000;
-int G_show_interval = 1000;
-int G_learning_plan = 1000;
-int G_loop = 4000;
+double G_eta = 0.03, G_attenuation = 0.4;
+int G_n = 3000;
+int G_show_interval = 500;
+int G_learning_plan = 500;
+int G_loop = 10000;
 int G_loop_i = 0;
 int G_batch_size = 32;
 ArrayList<Integer> G_nn_form = new ArrayList<> (Arrays.asList(2, 6, 8, 4, 1));
+//ArrayList<Integer> G_nn_form = new ArrayList<> (Arrays.asList(2, 10, 10, 10, 1));
 int G_depth = G_nn_form.size()-1;
 
 Layer layer = new Layer();
@@ -51,7 +52,7 @@ int rotate_speed = 200;
 
 void draw() {
   learn();
-  test();
+  //test();
   
   background(0);
   pushMatrix();
@@ -59,6 +60,7 @@ void draw() {
     rotateX(PI/5);
     rotateZ(time/400.0);
     draw_function();
+    draw_estimated_function();
   popMatrix();
 
   draw_nn();
@@ -72,10 +74,8 @@ void draw_function() {
   strokeWeight(0.5);
   noStroke();
 
-  //translate(width/2, height/2);
-
   float step = 0.5; // ポイント間の距離
-  float range = 20; // xおよびyの範囲
+  float range = 10; // xおよびyの範囲
 
   // xとyの範囲をループ
   for (float x = -range; x <= range; x += step) {
@@ -108,12 +108,12 @@ void draw_function() {
       beginShape(TRIANGLES);
       //fill(255, 0, 0, 128); // 赤色で塗りつぶし
       // 三角形の色を高さに応じてグラデーションにする
-      float minZ = -4; // 最小のZ値
-      float maxZ = 100; // 最大のZ値
+      float minZ = -60.2; // 最小のZ値
+      float maxZ = 100.9; // 最大のZ値
       
       // zの値に基づいて色を計算
       float t = map(sz, minZ, maxZ, 0, 1);
-      color c = lerpColor(color(255, 0, 255, 200), color(255, 255, 0, 200), t);
+      color c = lerpColor(color(138, 224, 189, 250), color(224, 138, 173, 250), t);
       pushStyle();
       fill(c);
 
@@ -129,8 +129,67 @@ void draw_function() {
     }
   }
 }
+//=============================================================================================
+void draw_estimated_function() {
+  stroke(0);
+  strokeWeight(0.5);
+  //noStroke();
 
+  float step = 1; // ポイント間の距離
+  float range = 10; // xおよびyの範囲
 
+  // xとyの範囲をループ
+  for (float x = -range; x <= range; x += step) {
+    for (float y = -range; y <= range; y += step) {
+      // 3次元座標を計算
+      float z = (float) estimate_function(x, y); // true_functionからz値を計算
+      //pushMatrix();
+      //translate(x, y, z);
+      //sphere(5);
+      //popMatrix();
+      float sx = map(x, -range, range, -width/4, width/4);
+      float sy = map(y, -range, range, -height/4, height/4);
+      float sz = map(z, -range, range, -200, 200);
+
+      // 隣接する3点の座標を計算
+      float z1 = (float) estimate_function(x, y + step);
+      float z2 = (float) estimate_function(x + step, y);
+      float z3 = (float) estimate_function(x + step, y + step);
+      float sx1 = map(x, -range, range, -width/4, width/4);
+      float sy1 = map(y + step, -range, range, -height/4, height/4);
+      float sz1 = map(z1, -range, range, -200, 200);
+      float sx2 = map(x + step, -range, range, -width/4, width/4);
+      float sy2 = map(y, -range, range, -height/4, height/4);
+      float sz2 = map(z2, -range, range, -200, 200);
+      float sx3 = map(x + step, -range, range, -width/4, width/4);
+      float sy3 = map(y + step, -range, range, -height/4, height/4);
+      float sz3 = map(z3, -range, range, -200, 200);
+
+      // 三角形を描画
+      beginShape(TRIANGLES);
+      //fill(255, 0, 0, 128); // 赤色で塗りつぶし
+      // 三角形の色を高さに応じてグラデーションにする
+      float minZ = -4.2; // 最小のZ値
+      float maxZ = 9.9; // 最大のZ値
+      
+      // zの値に基づいて色を計算
+      float t = map(sz, minZ, maxZ, 0, 1);
+      color c = lerpColor(color(255, 0, 255, 150), color(255, 255, 0, 150), t);
+      pushStyle();
+      fill(c);
+
+      vertex(sx, sy, sz);
+      vertex(sx1, sy1, sz1);
+      vertex(sx2, sy2, sz2);
+
+      vertex(sx1, sy1, sz1);
+      vertex(sx2, sy2, sz2);
+      vertex(sx3, sy3, sz3);
+      endShape();
+      popStyle();
+    }
+  }
+}
 
 
 
@@ -345,28 +404,25 @@ void test() {
   println(" ");
   //================================================
 }
-
-void main() {
-
-  println("first parameters");
-  //for (int i=0; i<depth; ++i) {
-  //  println("w " + i);
-  //  matrix_show(nn.get(i).w);
-  //}
-  //for (int i=0; i<depth; ++i) {
-  //  println("b " + i);
-  //  matrix_show_b(nn.get(i).b);
-  //}
-  main_setup();
-
-
-  //learn
-  learn();
-  for (int i=0; i<G_loop; ++i) {
-    learn();
+double estimate_function(double px, double py) {
+  for (int i=0; i<G_depth; ++i) {
+    G_nn.get(i).b = expansion_bias(G_nn.get(i).b, 1);
   }
-
-
+  
+  ArrayList<ArrayList<Double>> point = new ArrayList<>(1);
+  ArrayList<Double> tmp = new ArrayList<>();
+  tmp.add(px);
+  tmp.add(py);
+  point.add(tmp);
+  //px, py
+  //formard propagation
+  for (int k=0; k<G_depth; ++k) {
+    if (k == 0) G_nn.get(k).a = matrix_add(matrix_multi(point, G_nn.get(k).w), G_nn.get(k).b);
+    else G_nn.get(k).a = matrix_add(matrix_multi(G_nn.get(k-1).x, G_nn.get(k).w), G_nn.get(k).b);
+    if (k < G_depth-1) G_nn.get(k).x = hm_tanh(G_nn.get(k).a);
+    else G_nn.get(k).x = hm_identity(G_nn.get(k).a);
+  }
+  return G_nn.get(G_depth-1).x.get(0).get(0);
 }
 
 void mouseReleased() {
