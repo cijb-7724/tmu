@@ -43,45 +43,102 @@ void setup() {
   size(1000, 1000, P3D);
   p = new Properties();
   lights();
-  //main();
+  main_setup();
 }
 
 int time = 0;
 int rotate_speed = 200;
 
 void draw() {
-  main_setup();
   learn();
   test();
+  
+  background(0);
+  pushMatrix();
+    translate(width/2, width/4, 0);
+    rotateX(PI/5);
+    rotateZ(time/400.0);
+    draw_function();
+  popMatrix();
+
   draw_nn();
   ++time;
   if (time == 360*rotate_speed) time = 0;
 }
 
-//void draw() {
-//  // もし処理中でなければ、時間のかかる処理を開始する
-//  if (!isProcessing) {
-//    // 時間のかかる処理を開始するための関数を呼び出す
-//    //startLongProcess();
-//    main();
-//    isProcessing = true;
-//  }
-//  //++h;
-//  //if (h % 100 == 0) println("here " + h);
-//  // 処理が終了したら描画を行う
-//  if (!isProcessing) {
-//    println("Drawing..."); // 描画開始のログを出力
-//    // 描画処理を行う関数を呼び出す
-//    //render();
-//    draw_nn();
-//    println("Drawn"); // 描画完了のログを出力
-//  }
-//  ++time;
-//  if (time == 360*rotate_speed) time = 0;
-//}
+
+void draw_function() {
+  stroke(0);
+  strokeWeight(0.5);
+  noStroke();
+
+  //translate(width/2, height/2);
+
+  float step = 0.5; // ポイント間の距離
+  float range = 20; // xおよびyの範囲
+
+  // xとyの範囲をループ
+  for (float x = -range; x <= range; x += step) {
+    for (float y = -range; y <= range; y += step) {
+      // 3次元座標を計算
+      float z = (float) true_function(x, y); // true_functionからz値を計算
+      //pushMatrix();
+      //translate(x, y, z);
+      //sphere(5);
+      //popMatrix();
+      float sx = map(x, -range, range, -width/4, width/4);
+      float sy = map(y, -range, range, -height/4, height/4);
+      float sz = map(z, -range, range, -200, 200);
+
+      // 隣接する3点の座標を計算
+      float z1 = (float) true_function(x, y + step);
+      float z2 = (float) true_function(x + step, y);
+      float z3 = (float) true_function(x + step, y + step);
+      float sx1 = map(x, -range, range, -width/4, width/4);
+      float sy1 = map(y + step, -range, range, -height/4, height/4);
+      float sz1 = map(z1, -range, range, -200, 200);
+      float sx2 = map(x + step, -range, range, -width/4, width/4);
+      float sy2 = map(y, -range, range, -height/4, height/4);
+      float sz2 = map(z2, -range, range, -200, 200);
+      float sx3 = map(x + step, -range, range, -width/4, width/4);
+      float sy3 = map(y + step, -range, range, -height/4, height/4);
+      float sz3 = map(z3, -range, range, -200, 200);
+
+      // 三角形を描画
+      beginShape(TRIANGLES);
+      //fill(255, 0, 0, 128); // 赤色で塗りつぶし
+      // 三角形の色を高さに応じてグラデーションにする
+      float minZ = -4; // 最小のZ値
+      float maxZ = 100; // 最大のZ値
+      
+      // zの値に基づいて色を計算
+      float t = map(sz, minZ, maxZ, 0, 1);
+      color c = lerpColor(color(255, 0, 255, 200), color(255, 255, 0, 200), t);
+      pushStyle();
+      fill(c);
+
+      vertex(sx, sy, sz);
+      vertex(sx1, sy1, sz1);
+      vertex(sx2, sy2, sz2);
+
+      vertex(sx1, sy1, sz1);
+      vertex(sx2, sy2, sz2);
+      vertex(sx3, sy3, sz3);
+      endShape();
+      popStyle();
+    }
+  }
+}
+
+
+
+
+
+
+
+
 
 void draw_nn() {
-  background(255);
   noStroke();
   sphereDetail(30);
   lightSpecular(25, 225, 55);
@@ -89,104 +146,52 @@ void draw_nn() {
   ambientLight(p.getAmbientLR(), p.getAmbientLG(), p.getAmbientLB());
 
   int width_sph = 180;
-  int r1 = 100, r2 = 130, r3 = 160;
-
 
   translate(width_sph, height * 0.75, 0);
   rotateX(1.0*time/rotate_speed);
-
   translate(-width_sph, -height * 0.75, 0);
-  pushMatrix();
-  translate(width_sph, height * 0.75, 0);
-
-  ambient(red_amb[0], red_amb[1], red_amb[2]);
-  specular(red_spe[0], red_spe[1], red_spe[2]);
-  emissive(red_emi[0], red_emi[1], red_emi[2]);
-  shininess(red_shi);
-  int num = 2;
-  for (int i=0; i<num; ++i) {
-    pushMatrix();
-    translate(0, (int)(r1*Math.cos(2*Math.PI/num*i)), (int)(r1*Math.sin(2*Math.PI/num*i)));
-    sphere(30);
-    popMatrix();
-  }
-
-  for (int i=0; i<num; ++i) {
-    for (int j=0; j<6; ++j) {
-      stroke(0, 255, 0);
-      strokeWeight(4);
-      line(0, (int)(r1*Math.cos(2*Math.PI/num*i)), (int)(r1*Math.sin(2*Math.PI/num*i)), width_sph, (int)(r2*Math.cos(2*Math.PI/6*j)), (int)(r2*Math.sin(2*Math.PI/6*j)));
-      noStroke();
+  
+  pushMatrix();/////////////////////////////////////push
+  
+  int [] rs = {100, 130, 160, 100, 0};
+  
+  for (int lay=0; lay<G_depth; ++lay) {
+    if (lay == 0) {
+      translate(width_sph, height * 0.75, 0);
+    } else {
+      translate(width_sph, 0, 0);
     }
-  }
-
-
-  translate(width_sph, 0, 0);
-
-  ambient(blue_amb[0], blue_amb[1], blue_amb[2]);
-  specular(blue_spe[0], blue_spe[1], blue_spe[2]);
-  emissive(blue_emi[0], blue_emi[1], blue_emi[2]);
-  shininess(blue_shi);
-  num = 6;
-  for (int i=0; i<num; ++i) {
-    pushMatrix();
-    translate(0, (int)(r2*Math.cos(2*Math.PI/num*i)), (int)(r2*Math.sin(2*Math.PI/num*i)));
-    sphere(30);
-    popMatrix();
-  }
-
-  for (int i=0; i<num; ++i) {
-    for (int j=0; j<8; ++j) {
-      stroke(0, 255, 0);
-      strokeWeight(4);
-      line(0, (int)(r2*Math.cos(2*Math.PI/num*i)), (int)(r2*Math.sin(2*Math.PI/num*i)), width_sph, (int)(r3*Math.cos(2*Math.PI/8*j)), (int)(r3*Math.sin(2*Math.PI/8*j)));
-      noStroke();
+    
+    if (lay % 2 == 0) {
+      ambient(red_amb[0], red_amb[1], red_amb[2]);
+      specular(red_spe[0], red_spe[1], red_spe[2]);
+      emissive(red_emi[0], red_emi[1], red_emi[2]);
+      shininess(red_shi);
+    } else {
+      ambient(blue_amb[0], blue_amb[1], blue_amb[2]);
+      specular(blue_spe[0], blue_spe[1], blue_spe[2]);
+      emissive(blue_emi[0], blue_emi[1], blue_emi[2]);
+      shininess(blue_shi);
     }
-  }
-
-
-  translate(width_sph, 0, 0);
-
-  ambient(blue_amb[0], blue_amb[1], blue_amb[2]);
-  specular(blue_spe[0], blue_spe[1], blue_spe[2]);
-  emissive(blue_emi[0], blue_emi[1], blue_emi[2]);
-  shininess(blue_shi);
-  num = 8;
-  for (int i=0; i<num; ++i) {
-    pushMatrix();
-    translate(0, (int)(r3*Math.cos(2*Math.PI/num*i)), (int)(r3*Math.sin(2*Math.PI/num*i)));
-    sphere(30);
-    popMatrix();
-  }
-
-  for (int i=0; i<num; ++i) {
-    for (int j=0; j<4; ++j) {
-      stroke(0, 255, 0);
-      strokeWeight(4);
-      line(0, (int)(r3*Math.cos(2*Math.PI/num*i)), (int)(r3*Math.sin(2*Math.PI/num*i)), width_sph, (int)(r1*Math.cos(2*Math.PI/4*j)), (int)(r1*Math.sin(2*Math.PI/4*j)));
-      noStroke();
+    
+    
+    for (int i=0; i<G_nn_form.get(lay); ++i) {
+      pushMatrix();
+      translate(0, (int)(rs[lay]*Math.cos(2*Math.PI/G_nn_form.get(lay)*i)), (int)(rs[lay]*Math.sin(2*Math.PI/G_nn_form.get(lay)*i)));
+      sphere(30);
+      popMatrix();
     }
-  }
-
-  translate(width_sph, 0, 0);
-
-  ambient(blue_amb[0], blue_amb[1], blue_amb[2]);
-  specular(blue_spe[0], blue_spe[1], blue_spe[2]);
-  emissive(blue_emi[0], blue_emi[1], blue_emi[2]);
-  shininess(blue_shi);
-  num = 4;
-  for (int i=0; i<num; ++i) {
-    pushMatrix();
-    translate(0, (int)(r1*Math.cos(2*Math.PI/num*i)), (int)(r1*Math.sin(2*Math.PI/num*i)));
-    sphere(30);
-    popMatrix();
-  }
-
-  for (int i=0; i<num; ++i) {
-    stroke(0, 255, 0);
-    strokeWeight(4);
-    line(0, (int)(r1*Math.cos(2*Math.PI/num*i)), (int)(r1*Math.sin(2*Math.PI/num*i)), width_sph, 0, 0);
-    noStroke();
+    
+    //edge
+    for (int i=0; i<G_nn_form.get(lay); ++i) {
+      for (int j=0; j<G_nn_form.get(lay+1); ++j) {
+        stroke(0, 255, 0);
+        strokeWeight(4);
+        line(0, (int)(rs[lay]*Math.cos(2*Math.PI/G_nn_form.get(lay)*i)), (int)(rs[lay]*Math.sin(2*Math.PI/G_nn_form.get(lay)*i)), width_sph, (int)(rs[lay+1]*Math.cos(2*Math.PI/G_nn_form.get(lay+1)*j)), (int)(rs[lay+1]*Math.sin(2*Math.PI/G_nn_form.get(lay+1)*j)));
+        noStroke();
+      }
+    }
+    
   }
 
   translate(width_sph, 0, 0);
@@ -195,7 +200,8 @@ void draw_nn() {
   emissive(red_emi[0], red_emi[1], red_emi[2]);
   shininess(red_shi);
   sphere(30);
-  popMatrix();
+  
+  popMatrix();//////////////////////////////pop
 }
 
 
@@ -256,12 +262,17 @@ void main_setup() {
 }
 
 void learn() {
-  if (G_loop_i >= G_loop) return;
+  if (G_loop_i > G_loop) return;
   ArrayList<ArrayList<Double>> x0 = initial_AAD(0, 0, 0);
   ArrayList<ArrayList<Double>> t0 = initial_AAD(0, 0, 0);
   Collections.shuffle(G_id, random);
   shuffle_AAD(G_t, G_id);
   shuffle_AAD(G_x, G_id);
+  
+  //bias size resize
+  for (int i=0; i<G_depth; ++i) {
+    G_nn.get(i).b = expansion_bias(G_nn.get(i).b, G_batch_size);
+  }
 
   //choice top batch_size
   for (int j=0; j<G_batch_size; ++j) {
@@ -316,10 +327,11 @@ void test() {
   // test set
   for (int i=0; i<40; ++i) print("=");
   println(" ");
-  println("test set");
+  println("test set " + G_loop_i);
   for (int i=0; i<G_depth; ++i) {
     G_nn.get(i).b = expansion_bias(G_nn.get(i).b, G_n);
   }
+  println("G_n " + G_n);
   make_data(G_x, G_t, G_n);
   //formard propagation
   for (int k=0; k<G_depth; ++k) {
@@ -354,43 +366,7 @@ void main() {
     learn();
   }
 
-  //================================================
-  // train set
-  for (int i=0; i<40; ++i) print("=");
-  println(" ");
-  println("train set");
-  for (int i=0; i<G_depth; ++i) {
-    G_nn.get(i).b = expansion_bias(G_nn.get(i).b, G_n);
-  }
-  //formard propagation
-  for (int k=0; k<G_depth; ++k) {
-    if (k == 0) G_nn.get(k).a = matrix_add(matrix_multi(G_x, G_nn.get(k).w), G_nn.get(k).b);
-    else G_nn.get(k).a = matrix_add(matrix_multi(G_nn.get(k-1).x, G_nn.get(k).w), G_nn.get(k).b);
-    if (k < G_depth-1) G_nn.get(k).x = hm_tanh(G_nn.get(k).a);
-    else G_nn.get(k).x = hm_identity(G_nn.get(k).a);
-  }
-  println("MSE = " + hm_MSE(G_nn.get(G_depth-1).x, G_t));
-  for (int i=0; i<40; ++i) print("=");
-  println(" ");
-  //================================================
 
-  //================================================
-  // test set
-  //for (int i=0; i<40; ++i) print("=");
-  //println(" ");
-  //println("test set");
-  //make_data(x, t, n);
-  ////formard propagation
-  //for (int k=0; k<depth; ++k) {
-  //  if (k == 0) nn.get(k).a = matrix_add(matrix_multi(x, nn.get(k).w), nn.get(k).b);
-  //  else nn.get(k).a = matrix_add(matrix_multi(nn.get(k-1).x, nn.get(k).w), nn.get(k).b);
-  //  if (k < depth-1) nn.get(k).x = hm_tanh(nn.get(k).a);
-  //  else nn.get(k).x = hm_identity(nn.get(k).a);
-  //}
-  //println("MSE = " + hm_MSE(nn.get(depth-1).x, t));
-  //for (int i=0; i<40; ++i) print("=");
-  //println(" ");
-  //================================================
 }
 
 void mouseReleased() {
