@@ -3,11 +3,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Random;
 import java.util.Arrays;
-
+PImage img;
 Properties p;
-int[][] amb = {{102, 153, 10}, {0, 0, 0}, {125, 31, 100}};
-int[][] spe = {{63, 62, 78}, {225, 221, 200}, {0, 0, 128}};
-int[][] emi = {{99, 98, 150}, {106, 99, 46}, {106, 99, 46}};
 
 int [] red_amb = {30, 30, 30};
 int [] red_spe = {130, 70, 130};
@@ -24,14 +21,10 @@ int [] yel_spe = {130, 130, 70};
 int [] yel_emi = {130, 130, 10};
 int yel_shi = 100;
 
-
-
 int [] blue_amb = {30, 30, 30};
 int [] blue_spe = {130, 70, 130};
 int [] blue_emi = {10, 10, 130};
 int blue_shi = 100;
-
-int[] shi = {10, 10, 50};
 
 ArrayList<ArrayList<Double>> G_x = initial_AAD(0, 0, 0);
 ArrayList<ArrayList<Double>> G_t = initial_AAD(0, 0, 0);
@@ -42,21 +35,23 @@ int G_learning_plan = 500;
 int G_loop = 4000;
 int G_loop_i = 0;
 int G_batch_size = 32;
-ArrayList<Integer> G_nn_form = new ArrayList<> (Arrays.asList(2, 6, 8, 4, 1));
-//ArrayList<Integer> G_nn_form = new ArrayList<> (Arrays.asList(2, 1, 2, 1, 1));
+//ArrayList<Integer> G_nn_form = new ArrayList<> (Arrays.asList(2, 6, 8, 4, 1));
+ArrayList<Integer> G_nn_form = new ArrayList<> (Arrays.asList(2, 30, 2, 1, 1));
 int G_depth = G_nn_form.size()-1;
 
 Layer layer = new Layer();
 ArrayList<Layer> G_nn = layer.createLayerList(G_depth);
 ArrayList<Integer> G_id = new ArrayList<>();
 
-boolean isProcessing = false;
 
 void setup() {
   size(1000, 1000, P3D);
   p = new Properties();
   lights();
   main_setup();
+  textSize(24);
+  textAlign(CENTER, CENTER);
+  img = loadImage("tex.png");
 }
 
 int time = 0;
@@ -64,22 +59,53 @@ int rotate_speed = 200;
 
 void draw() {
   learn();
-  
+
   background(0);
+
+
   pushMatrix();
-    translate(width/2, width/3.5, 0);
-    rotateX(PI/5);
-    rotateZ(time/400.0);
-    draw_function();
-    draw_estimated_function();
+  translate(width/2, width/3.5, 0);
+  rotateX(PI/5);
+  rotateZ(time/400.0);
+  draw_function();
+  draw_estimated_function();
   popMatrix();
 
+  pushMatrix();
   draw_nn();
+  popMatrix();
+
+  pushMatrix();
+  draw_pic();
+  popMatrix();
   ++time;
   if (time == 360*rotate_speed) time = 0;
 }
+void draw_pic() {
+  if (img != null) { // 画像が読み込まれている場合
+    float imgWidth = img.width;
+    float imgHeight = img.height;
+    float aspectRatio = imgWidth / imgHeight;
 
+    // 画面サイズに合わせて画像のサイズを調整
+    if (imgWidth > width || imgHeight > height) {
+      if (imgWidth > imgHeight) {
+        imgWidth = width;
+        imgHeight = width / aspectRatio;
+      } else {
+        imgHeight = height;
+        imgWidth = height * aspectRatio;
+      }
+    }
 
+    // 画像を中央に配置
+    float x = 0;
+    float y = (height - imgHeight) / 2;
+    image(img, x, y, imgWidth, imgHeight);
+  } else {
+    println("画像が読み込まれていません");
+  }
+}
 void draw_function() {
   stroke(0);
   strokeWeight(0.5);
@@ -93,10 +119,6 @@ void draw_function() {
     for (float y = -range; y <= range; y += step) {
       // 3次元座標を計算
       float z = (float) true_function(x, y); // true_functionからz値を計算
-      //pushMatrix();
-      //translate(x, y, z);
-      //sphere(5);
-      //popMatrix();
       float sx = map(x, -range, range, -width/4, width/4);
       float sy = map(y, -range, range, -height/4, height/4);
       float sz = map(z, -range, range, -200, 200);
@@ -117,11 +139,10 @@ void draw_function() {
 
       // 三角形を描画
       beginShape(TRIANGLES);
-      //fill(255, 0, 0, 128); // 赤色で塗りつぶし
       // 三角形の色を高さに応じてグラデーションにする
       float minZ = -60.2; // 最小のZ値
       float maxZ = 100.9; // 最大のZ値
-      
+
       // zの値に基づいて色を計算
       float t = map(sz, minZ, maxZ, 0, 1);
       color c = lerpColor(color(138, 224, 189, 250), color(224, 138, 173, 250), t);
@@ -154,10 +175,6 @@ void draw_estimated_function() {
     for (float y = -range; y <= range; y += step) {
       // 3次元座標を計算
       float z = (float) estimate_function(x, y); // true_functionからz値を計算
-      //pushMatrix();
-      //translate(x, y, z);
-      //sphere(5);
-      //popMatrix();
       float sx = map(x, -range, range, -width/4, width/4);
       float sy = map(y, -range, range, -height/4, height/4);
       float sz = map(z, -range, range, -200, 200);
@@ -178,11 +195,10 @@ void draw_estimated_function() {
 
       // 三角形を描画
       beginShape(TRIANGLES);
-      //fill(255, 0, 0, 128); // 赤色で塗りつぶし
       // 三角形の色を高さに応じてグラデーションにする
       float minZ = -60.2; // 最小のZ値
       float maxZ = 100.9; // 最大のZ値
-      
+
       // zの値に基づいて色を計算
       float t = map(sz, minZ, maxZ, 0, 1);
       color c = lerpColor(color(255, 0, 255, 150), color(255, 255, 0, 150), t);
@@ -208,6 +224,10 @@ void draw_estimated_function() {
 
 
 
+
+
+
+
 void draw_nn() {
   noStroke();
   sphereDetail(30);
@@ -220,22 +240,21 @@ void draw_nn() {
   translate(width_sph, height * 0.75, 0);
   rotateX(1.0*time/rotate_speed);
   translate(-width_sph, -height * 0.75, 0);
-  
+
   pushMatrix();/////////////////////////////////////push
-  
+
   int [] rs = {100, 130, 160, 100, 0};
-  
+
   for (int lay=0; lay<G_depth; ++lay) {
     if (lay == 0) {
       translate(width_sph, height * 0.75, 0);
     } else {
       translate(width_sph, 0, 0);
     }
-    
-    
+
     for (int i=0; i<G_nn_form.get(lay); ++i) {
       pushMatrix();
-      translate(0, (int)(r_help(G_nn_form.get(lay))*rs[lay]*Math.cos(2*Math.PI/G_nn_form.get(lay)*i)), (int)(r_help(G_nn_form.get(lay))*rs[lay]*Math.sin(2*Math.PI/G_nn_form.get(lay)*i))); 
+      translate(0, (int)(r_help(G_nn_form.get(lay))*rs[lay]*Math.cos(2*Math.PI/G_nn_form.get(lay)*i)), (int)(r_help(G_nn_form.get(lay))*rs[lay]*Math.sin(2*Math.PI/G_nn_form.get(lay)*i)));
       if (lay == 0) {
         ambient(yel_amb[0], yel_amb[1], yel_amb[2]);
         specular(yel_spe[0], yel_spe[1], yel_spe[2]);
@@ -246,7 +265,6 @@ void draw_nn() {
         if (num < 0) {
           num /= 1.2;
           num += 1.0;
-          
           ambient(blue_amb[0], blue_amb[1], blue_amb[2]);
           specular(blue_spe[0], blue_spe[1]+num*60, blue_spe[2]);
           emissive(blue_emi[0]+num*120, blue_emi[1]+num*120, blue_emi[2]);
@@ -257,16 +275,12 @@ void draw_nn() {
           specular(white_spe[0], white_spe[1]-num*60, white_spe[2]);
           emissive(white_emi[0], white_emi[1]-num*120, white_emi[2]-num*120);
           shininess(white_shi);
-          
-        }        
-        
+        }
       }
-      
-      
       sphere(30);
       popMatrix();
     }
-    
+
     //edge
     color c = color(100, 100, 100);
     for (int i=0; i<G_nn_form.get(lay); ++i) {
@@ -278,12 +292,11 @@ void draw_nn() {
         } else {
           c = color(255, min((int)((3-num) * 255/ 4.0), 255), min((int)((3-num) * 255/ 4.0), 255));
         }
-        
+
         draw_lines(0, (int)(r_help(G_nn_form.get(lay))*rs[lay]*Math.cos(2*Math.PI/G_nn_form.get(lay)*i)), (int)(r_help(G_nn_form.get(lay))*rs[lay]*Math.sin(2*Math.PI/G_nn_form.get(lay)*i)), width_sph, (int)(r_help(G_nn_form.get(lay+1))*rs[lay+1]*Math.cos(2*Math.PI/G_nn_form.get(lay+1)*j)), (int)(r_help(G_nn_form.get(lay+1))*rs[lay+1]*Math.sin(2*Math.PI/G_nn_form.get(lay+1)*j)), c, Math.abs(num)*3);
         noStroke();
       }
     }
-    
   }
 
   translate(width_sph, 0, 0);
@@ -292,7 +305,7 @@ void draw_nn() {
   emissive(yel_emi[0], yel_emi[1], yel_emi[2]);
   shininess(yel_shi);
   sphere(30);
-  
+
   popMatrix();//////////////////////////////pop
 }
 
@@ -307,35 +320,35 @@ void draw_lines(float startX, float startY, float startZ, float endX, float endY
   float lineDirX = (endX - startX) / lineLength;  // 線の方向ベクトルのx成分
   float lineDirY = (endY - startY) / lineLength;  // 線の方向ベクトルのy成分
   float lineDirZ = (endZ - startZ) / lineLength;  // 線の方向ベクトルのz成分
-  
+
   float gx = startX + lineDirX*(lineLength/3.0);
   float gy = startY + lineDirY*(lineLength/3.0);
   float gz = startZ + lineDirZ*(lineLength/3.0);
-  
+
   float t0x = startX + lineDirX*edge_speed;
   float t0y = startY + lineDirY*edge_speed;
   float t0z = startZ + lineDirZ*edge_speed;
-  
+
   float t0x2 = t0x + lineDirX*wid;
   float t0y2 = t0y + lineDirY*wid;
   float t0z2 = t0z + lineDirZ*wid;
-  
+
   float t1x = t0x + lineLength/3*lineDirX;
   float t1y = t0y + lineLength/3*lineDirY;
   float t1z = t0z + lineLength/3*lineDirZ;
-  
+
   float t1x2 = t1x + lineDirX*wid;
   float t1y2 = t1y + lineDirY*wid;
   float t1z2 = t1z + lineDirZ*wid;
-  
+
   float t2x = t0x + lineLength*2/3*lineDirX;
   float t2y = t0y + lineLength*2/3*lineDirY;
   float t2z = t0z + lineLength*2/3*lineDirZ;
-  
+
   float t2x2 = t2x + lineDirX*wid;
   float t2y2 = t2y + lineDirY*wid;
   float t2z2 = t2z + lineDirZ*wid;
- 
+
   edge_speed += 0.05;
   if (dot(t0x2-t0x, t0y2-t0y, t0z2-t0z, t0x-gx, t0y-gy, t0z-gz) > 0) {
     edge_speed = 0;
@@ -347,7 +360,7 @@ void draw_lines(float startX, float startY, float startZ, float endX, float endY
   line(t0x2, t0y2, t0z2, t1x, t1y, t1z);
   line(t1x2, t1y2, t1z2, t2x, t2y, t2z);
   line(t2x2, t2y2, t2z2, endX, endY, endZ);
-  
+
   //white
   stroke(200, 230, 140, 255);
   strokeWeight(lineWid*1.5);
@@ -423,7 +436,7 @@ void learn() {
   Collections.shuffle(G_id, random);
   shuffle_AAD(G_t, G_id);
   shuffle_AAD(G_x, G_id);
-  
+
   //bias size resize
   for (int i=0; i<G_depth; ++i) {
     G_nn.get(i).b = expansion_bias(G_nn.get(i).b, G_batch_size);
@@ -504,7 +517,7 @@ double estimate_function(double px, double py) {
   for (int i=0; i<G_depth; ++i) {
     G_nn.get(i).b = expansion_bias(G_nn.get(i).b, 1);
   }
-  
+
   ArrayList<ArrayList<Double>> point = new ArrayList<>(1);
   ArrayList<Double> tmp = new ArrayList<>();
   tmp.add(px);
