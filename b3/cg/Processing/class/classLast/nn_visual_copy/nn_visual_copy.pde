@@ -23,13 +23,13 @@ int[] shi = {10, 10, 50};
 
 ArrayList<ArrayList<Double>> G_x = initial_AAD(0, 0, 0);
 ArrayList<ArrayList<Double>> G_t = initial_AAD(0, 0, 0);
-double G_eta = 0.03, G_attenuation = 0.4;
+double G_eta = 0.03, G_attenuation = 0.9;
 int G_n = 3000;
 int G_show_interval = 500;
 int G_learning_plan = 500;
-int G_loop = 10000;
+int G_loop = 5000;
 int G_loop_i = 0;
-int G_batch_size = 32;
+int G_batch_size = 132;
 ArrayList<Integer> G_nn_form = new ArrayList<> (Arrays.asList(2, 6, 8, 4, 1));
 //ArrayList<Integer> G_nn_form = new ArrayList<> (Arrays.asList(2, 10, 10, 10, 1));
 int G_depth = G_nn_form.size()-1;
@@ -56,7 +56,7 @@ void draw() {
   
   background(0);
   pushMatrix();
-    translate(width/2, width/4, 0);
+    translate(width/2, width/3.6, 0);
     rotateX(PI/5);
     rotateZ(time/400.0);
     draw_function();
@@ -244,9 +244,11 @@ void draw_nn() {
     //edge
     for (int i=0; i<G_nn_form.get(lay); ++i) {
       for (int j=0; j<G_nn_form.get(lay+1); ++j) {
-        stroke(0, 255, 0);
-        strokeWeight(4);
-        line(0, (int)(rs[lay]*Math.cos(2*Math.PI/G_nn_form.get(lay)*i)), (int)(rs[lay]*Math.sin(2*Math.PI/G_nn_form.get(lay)*i)), width_sph, (int)(rs[lay+1]*Math.cos(2*Math.PI/G_nn_form.get(lay+1)*j)), (int)(rs[lay+1]*Math.sin(2*Math.PI/G_nn_form.get(lay+1)*j)));
+        //stroke(0, 255, 0);
+        //strokeWeight(4);
+        //line(0, (int)(rs[lay]*Math.cos(2*Math.PI/G_nn_form.get(lay)*i)), (int)(rs[lay]*Math.sin(2*Math.PI/G_nn_form.get(lay)*i)), width_sph, (int)(rs[lay+1]*Math.cos(2*Math.PI/G_nn_form.get(lay+1)*j)), (int)(rs[lay+1]*Math.sin(2*Math.PI/G_nn_form.get(lay+1)*j)));
+        draw_lines(0, (int)(rs[lay]*Math.cos(2*Math.PI/G_nn_form.get(lay)*i)), (int)(rs[lay]*Math.sin(2*Math.PI/G_nn_form.get(lay)*i)), width_sph, (int)(rs[lay+1]*Math.cos(2*Math.PI/G_nn_form.get(lay+1)*j)), (int)(rs[lay+1]*Math.sin(2*Math.PI/G_nn_form.get(lay+1)*j)));
+        //draw_lines(0, rs[lay]*Math.cos(2*Math.PI/G_nn_form.get(lay)*i)), rs[lay]*Math.sin(2*Math.PI/G_nn_form.get(lay)*i), width_sph, (rs[lay+1]*Math.cos(2*Math.PI/G_nn_form.get(lay+1)*j), rs[lay+1]*Math.sin(2*Math.PI/G_nn_form.get(lay+1)*j));
         noStroke();
       }
     }
@@ -262,7 +264,65 @@ void draw_nn() {
   
   popMatrix();//////////////////////////////pop
 }
+float edge_speed = 0;
+float wid = 10;
+void draw_lines(float startX, float startY, float startZ, float endX, float endY, float endZ) {
+  float lineLength = dist(startX, startY, startZ, endX, endY, endZ);  // 線の長さ
+  float lineDirX = (endX - startX) / lineLength;  // 線の方向ベクトルのx成分
+  float lineDirY = (endY - startY) / lineLength;  // 線の方向ベクトルのy成分
+  float lineDirZ = (endZ - startZ) / lineLength;  // 線の方向ベクトルのz成分
+  
+  float gx = startX + lineDirX*(lineLength/3.0);
+  float gy = startY + lineDirY*(lineLength/3.0);
+  float gz = startZ + lineDirZ*(lineLength/3.0);
+  
+  float t0x = startX + lineDirX*edge_speed;
+  float t0y = startY + lineDirY*edge_speed;
+  float t0z = startZ + lineDirZ*edge_speed;
+  
+  float t0x2 = t0x + lineDirX*wid;
+  float t0y2 = t0y + lineDirY*wid;
+  float t0z2 = t0z + lineDirZ*wid;
+  
+  float t1x = t0x + lineLength/3*lineDirX;
+  float t1y = t0y + lineLength/3*lineDirY;
+  float t1z = t0z + lineLength/3*lineDirZ;
+  
+  float t1x2 = t1x + lineDirX*wid;
+  float t1y2 = t1y + lineDirY*wid;
+  float t1z2 = t1z + lineDirZ*wid;
+  
+  float t2x = t0x + lineLength*2/3*lineDirX;
+  float t2y = t0y + lineLength*2/3*lineDirY;
+  float t2z = t0z + lineLength*2/3*lineDirZ;
+  
+  float t2x2 = t2x + lineDirX*wid;
+  float t2y2 = t2y + lineDirY*wid;
+  float t2z2 = t2z + lineDirZ*wid;
+ 
+  edge_speed += 0.05;
+  if (dot(t0x2-t0x, t0y2-t0y, t0z2-t0z, t0x-gx, t0y-gy, t0z-gz) > 0) {
+    edge_speed = 0;
+  }
+  //green
+  stroke(0, 255, 0);
+  strokeWeight(4);
+  line(startX, startY, startZ, t0x, t0y, t0z);
+  line(t0x2, t0y2, t0z2, t1x, t1y, t1z);
+  line(t1x2, t1y2, t1z2, t2x, t2y, t2z);
+  line(t2x2, t2y2, t2z2, endX, endY, endZ);
+  
+  //white
+  stroke(255);
+  strokeWeight(6);
+  line(t0x, t0y, t0z, t0x2, t0y2, t0z2);
+  line(t1x, t1y, t1z, t1x2, t1y2, t1z2);
+  line(t2x, t2y, t2z, t2x2, t2y2, t2z2);
+}
 
+float dot(float a, float b, float c, float d, float e, float f) {
+  return a*d + b*e + c*f;
+}
 
 
 

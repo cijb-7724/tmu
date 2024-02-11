@@ -97,13 +97,13 @@ void main() {
   ArrayList<ArrayList<Double>> x = initial_AAD(0, 0, 0);
   ArrayList<ArrayList<Double>> t = initial_AAD(0, 0, 0);
   double eta = 0.03, attenuation = 0.4;
-  int n = 10000;
+  int n = 1000;
   int show_interval = 1000;
-  int learning_plan = 1000;
+  int learning_plan = 500;
   int loop = 10000;
   int batch_size = 32;
-  ArrayList<Integer> nn_form = new ArrayList<> (Arrays.asList(2, 6, 8, 4, 1));
-  //ArrayList<Integer> nn_form = new ArrayList<> (Arrays.asList(2, 4, 1));
+  //ArrayList<Integer> nn_form = new ArrayList<> (Arrays.asList(2, 6, 8, 4, 1));
+  ArrayList<Integer> nn_form = new ArrayList<> (Arrays.asList(2, 10, 8, 10, 1));
   int depth = nn_form.size()-1;
 
   Layer layer = new Layer();
@@ -250,7 +250,7 @@ void main() {
 //  ####      #####   ##   ##    ####    ####     ####     #####   ##   ##
 Random random = new Random(0);
 double rand() {
-  return -10 + 20 * random.nextDouble();
+  return -20 + 40 * random.nextDouble();
 }
 double gaussianDistribution(double mu, double sig) {
   double u1 = 1.0 - random.nextDouble();
