@@ -5,7 +5,9 @@ import java.util.Random;
 import java.util.Arrays;
 PImage img;
 Properties p;
-
+boolean isMenu = true;
+Button3D button, button2, button3, button4, button5, button6;
+boolean buttonWasClicked = false; // ボタンがクリックされたかどうかのフラグ
 int [] red_amb = {30, 30, 30};
 int [] red_spe = {130, 70, 130};
 int [] red_emi = {130, 10, 10};
@@ -35,8 +37,8 @@ int G_learning_plan = 500;
 int G_loop = 4000;
 int G_loop_i = 0;
 int G_batch_size = 32;
-//ArrayList<Integer> G_nn_form = new ArrayList<> (Arrays.asList(2, 6, 8, 4, 1));
-ArrayList<Integer> G_nn_form = new ArrayList<> (Arrays.asList(2, 30, 2, 1, 1));
+ArrayList<Integer> G_nn_form = new ArrayList<> (Arrays.asList(2, 6, 8, 4, 1));
+//ArrayList<Integer> G_nn_form = new ArrayList<> (Arrays.asList(2, 10, 20, 10, 1));
 int G_depth = G_nn_form.size()-1;
 
 Layer layer = new Layer();
@@ -52,36 +54,130 @@ void setup() {
   textSize(24);
   textAlign(CENTER, CENTER);
   img = loadImage("tex.png");
+  button = new Button3D(350, 1000, 0, 50, 50, "+");
+  button2 = new Button3D(350, 1080, 0, 50, 50, "-");
+  button3 = new Button3D(540, 1000, 0, 50, 50, "+");
+  button4 = new Button3D(540, 1080, 0, 50, 50, "-");
+  button5 = new Button3D(730, 1000, 0, 50, 50, "+");
+  button6 = new Button3D(730, 1080, 0, 50, 50, "-");
 }
 
 int time = 0;
 int rotate_speed = 200;
-
 void draw() {
-  learn();
-
   background(0);
+  if (isMenu) {
+    menu();
+    
+  } else {
+    
+    learn();
+    pushMatrix();
+    translate(width/2, width/3.5, 0);
+    rotateX(PI/5);
+    rotateZ(time/400.0);
+    draw_function();
+    draw_estimated_function();
+    popMatrix();
+  
+    pushMatrix();
+    draw_nn();
+    popMatrix();
+  
+    pushMatrix();
+    draw_pic(2);
+    popMatrix();
+    ++time;
+    if (time == 360*rotate_speed) time = 0;
+  }
+}
 
-
+void menu() {
   pushMatrix();
-  translate(width/2, width/3.5, 0);
-  rotateX(PI/5);
-  rotateZ(time/400.0);
-  draw_function();
-  draw_estimated_function();
+  draw_pic(3.7);
+  popMatrix();
+  fill(0, 255, 0);
+  textSize(80);
+  textAlign(CENTER, CENTER);
+  String str = "を推定する全結合ニューラルネットワークを作成";
+  str = "Create neural network\n to estimate";
+  text(str, width/2, height/8);
+  translate(0, -height/4.7, 0);
+  pushMatrix();
+  draw_nn_menu();
+  popMatrix();
+  
+  pushMatrix();
+  //noStroke();
+  button.display();
+  button2.display();
+  button3.display();
+  button4.display();
+  button5.display();
+  button6.display();
   popMatrix();
 
-  pushMatrix();
-  draw_nn();
-  popMatrix();
-
-  pushMatrix();
-  draw_pic();
-  popMatrix();
   ++time;
   if (time == 360*rotate_speed) time = 0;
 }
-void draw_pic() {
+void mouseClicked() {
+  if (button.isClicked(mouseX, mouseY)) {
+    //number++;
+    println("clicked");
+  }
+  if (button2.isClicked(mouseX, mouseY)) {
+    println("clicked");
+  }
+  if (button3.isClicked(mouseX, mouseY)) {
+    println("clicked");
+  }
+  if (button4.isClicked(mouseX, mouseY)) {
+    println("clicked");
+  }
+  if (button5.isClicked(mouseX, mouseY)) {
+    println("clicked");
+  }
+  if (button6.isClicked(mouseX, mouseY)) {
+    println("clicked");
+  }
+}
+
+class Button3D {
+  float x, y, z;
+  float w, h;
+  String label;
+
+  Button3D(float x, float y, float z, float w, float h, String label) {
+    this.x = x;
+    this.y = y;
+    this.z = z;
+    this.w = w;
+    this.h = h;
+    this.label = label;
+  }
+
+  void display() {
+    pushMatrix();
+    translate(x, y, z);
+    //fill(200, 0, 0, 0);
+    fill(200);
+    box(w, h, 10);
+    fill(0);
+    textSize(24);
+    textAlign(CENTER, CENTER);
+    text(label, 0, 0);
+    popMatrix();
+  }
+  
+  boolean isClicked(float mx, float my) {
+    float buttonX = screenX(x, y, z); // ボタンの3D座標を2D座標に変換
+    float buttonY = screenY(x, y, z);
+    return (mx > buttonX - w/2 && mx < buttonX + w/2 && my > buttonY - h/2 && my < buttonY + h/2);
+  }
+}
+
+
+void draw_pic(float up) {
   if (img != null) { // 画像が読み込まれている場合
     float imgWidth = img.width;
     float imgHeight = img.height;
@@ -100,12 +196,14 @@ void draw_pic() {
 
     // 画像を中央に配置
     float x = 0;
-    float y = (height - imgHeight) / 2;
+    float y = (height - imgHeight) / up;
     image(img, x, y, imgWidth, imgHeight);
   } else {
     println("画像が読み込まれていません");
   }
 }
+
+
 void draw_function() {
   stroke(0);
   strokeWeight(0.5);
@@ -294,6 +392,64 @@ void draw_nn() {
         }
 
         draw_lines(0, (int)(r_help(G_nn_form.get(lay))*rs[lay]*Math.cos(2*Math.PI/G_nn_form.get(lay)*i)), (int)(r_help(G_nn_form.get(lay))*rs[lay]*Math.sin(2*Math.PI/G_nn_form.get(lay)*i)), width_sph, (int)(r_help(G_nn_form.get(lay+1))*rs[lay+1]*Math.cos(2*Math.PI/G_nn_form.get(lay+1)*j)), (int)(r_help(G_nn_form.get(lay+1))*rs[lay+1]*Math.sin(2*Math.PI/G_nn_form.get(lay+1)*j)), c, Math.abs(num)*3);
+        noStroke();
+      }
+    }
+  }
+
+  translate(width_sph, 0, 0);
+  ambient(yel_amb[0], yel_amb[1], yel_amb[2]);
+  specular(yel_spe[0], yel_spe[1], yel_spe[2]);
+  emissive(yel_emi[0], yel_emi[1], yel_emi[2]);
+  shininess(yel_shi);
+  sphere(30);
+
+  popMatrix();//////////////////////////////pop
+}
+
+void draw_nn_menu() {
+  noStroke();
+  sphereDetail(30);
+  lightSpecular(25, 225, 55);
+  directionalLight(p.getDirectionalLR(), p.getDirectionalLG(), p.getDirectionalLB(), -1, 1, -1);
+  ambientLight(p.getAmbientLR(), p.getAmbientLG(), p.getAmbientLB());
+
+  int width_sph = 180;
+
+  translate(width_sph, height * 0.75, 0);
+  rotateX(1.0*time/rotate_speed);
+  translate(-width_sph, -height * 0.75, 0);
+
+  pushMatrix();/////////////////////////////////////push
+
+  int [] rs = {100, 130, 160, 100, 0};
+
+  for (int lay=0; lay<G_depth; ++lay) {
+    if (lay == 0) {
+      translate(width_sph, height * 0.75, 0);
+    } else {
+      translate(width_sph, 0, 0);
+    }
+
+    for (int i=0; i<G_nn_form.get(lay); ++i) {
+      pushMatrix();
+      translate(0, (int)(r_help(G_nn_form.get(lay))*rs[lay]*Math.cos(2*Math.PI/G_nn_form.get(lay)*i)), (int)(r_help(G_nn_form.get(lay))*rs[lay]*Math.sin(2*Math.PI/G_nn_form.get(lay)*i)));
+      
+      ambient(yel_amb[0], yel_amb[1], yel_amb[2]);
+      specular(yel_spe[0], yel_spe[1], yel_spe[2]);
+      emissive(yel_emi[0], yel_emi[1], yel_emi[2]);
+      shininess(yel_shi);
+      sphere(30);
+      sphere(30);
+      popMatrix();
+    }
+
+    //edge
+    color c = color(100, 100, 100);
+    for (int i=0; i<G_nn_form.get(lay); ++i) {
+      for (int j=0; j<G_nn_form.get(lay+1); ++j) {
+        c = color(0, 255, 0);
+        draw_lines(0, (int)(r_help(G_nn_form.get(lay))*rs[lay]*Math.cos(2*Math.PI/G_nn_form.get(lay)*i)), (int)(r_help(G_nn_form.get(lay))*rs[lay]*Math.sin(2*Math.PI/G_nn_form.get(lay)*i)), width_sph, (int)(r_help(G_nn_form.get(lay+1))*rs[lay+1]*Math.cos(2*Math.PI/G_nn_form.get(lay+1)*j)), (int)(r_help(G_nn_form.get(lay+1))*rs[lay+1]*Math.sin(2*Math.PI/G_nn_form.get(lay+1)*j)), c, 4);
         noStroke();
       }
     }
