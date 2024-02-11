@@ -1,38 +1,39 @@
-Button button;
+Button3D button;
 int number = 0;
 
 void setup() {
-  size(800, 600, P3D);
-  button = new Button(100, 100, 100, 50, "+");
+  size(1000, 1000, P3D);
+  button = new Button3D(100, 1000, -100, 100, 50, "+");
 }
 
 void draw() {
   background(220);
   lights();
-  translate(width/2, height/2, 0);
-  rotateY(frameCount * 0.01);
   button.display();
   
   // 数字の表示
   fill(0);
   textSize(48);
   textAlign(CENTER, CENTER);
-  text(number, 0, 0);
+  text(number, width/2, height/2);
 }
 
-void mousePressed() {
+void mouseClicked() {
   if (button.isClicked(mouseX, mouseY)) {
-    number++; // ボタンがクリックされたら数字を増加
+    number++;
+    println("clicked");
   }
 }
 
-class Button {
-  float x, y, w, h;
+class Button3D {
+  float x, y, z;
+  float w, h;
   String label;
 
-  Button(float x, float y, float w, float h, String label) {
+  Button3D(float x, float y, float z, float w, float h, String label) {
     this.x = x;
     this.y = y;
+    this.z = z;
     this.w = w;
     this.h = h;
     this.label = label;
@@ -40,7 +41,7 @@ class Button {
 
   void display() {
     pushMatrix();
-    translate(x, y, 0);
+    translate(x, y, z);
     fill(200);
     box(w, h, 10);
     fill(0);
@@ -51,7 +52,8 @@ class Button {
   }
   
   boolean isClicked(float mx, float my) {
-    // マウスの座標がボタンの範囲内にあるかをチェック
-    return (mx > x - w/2 && mx < x + w/2 && my > y - h/2 && my < y + h/2);
+    float buttonX = screenX(x, y, z); // ボタンの3D座標を2D座標に変換
+    float buttonY = screenY(x, y, z);
+    return (mx > buttonX - w/2 && mx < buttonX + w/2 && my > buttonY - h/2 && my < buttonY + h/2);
   }
 }

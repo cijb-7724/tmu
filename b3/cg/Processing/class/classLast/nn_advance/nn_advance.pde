@@ -7,6 +7,7 @@ PImage img;
 Properties p;
 boolean isMenu = true;
 Button3D button, button2, button3, button4, button5, button6;
+Button3D button_start, button_stop;
 boolean buttonWasClicked = false; // ボタンがクリックされたかどうかのフラグ
 int [] red_amb = {30, 30, 30};
 int [] red_spe = {130, 70, 130};
@@ -39,6 +40,7 @@ int G_loop_i = 0;
 int G_batch_size = 32;
 ArrayList<Integer> G_nn_form = new ArrayList<> (Arrays.asList(2, 6, 8, 4, 1));
 //ArrayList<Integer> G_nn_form = new ArrayList<> (Arrays.asList(2, 10, 20, 10, 1));
+//ArrayList<Integer> G_nn_form = new ArrayList<> (Arrays.asList(2, 1, 2, 1, 1));
 int G_depth = G_nn_form.size()-1;
 
 Layer layer = new Layer();
@@ -60,6 +62,9 @@ void setup() {
   button4 = new Button3D(540, 1080, 0, 50, 50, "-");
   button5 = new Button3D(730, 1000, 0, 50, 50, "+");
   button6 = new Button3D(730, 1080, 0, 50, 50, "-");
+  button_start = new Button3D(150, 1050, 0,200, 200, " ");
+  button_stop = new Button3D(75, 920, 0, 80, 80, " ");
+  
 }
 
 int time = 0;
@@ -67,11 +72,27 @@ int rotate_speed = 200;
 void draw() {
   background(0);
   if (isMenu) {
+    pushStyle();
     menu();
+    popStyle();
     
   } else {
     
     learn();
+    pushStyle();
+      button_stop.display();
+    popStyle();
+    pushMatrix();
+      translate(50, 920, -50);
+      ambient(yel_amb[0], yel_amb[1], yel_amb[2]);
+      specular(yel_spe[0], yel_spe[1], yel_spe[2]);
+      emissive(yel_emi[0], yel_emi[1], yel_emi[2]);
+      shininess(yel_shi);
+      sphere(50);
+      textSize(40);
+      text("Back to menu", 150, 50, 40);
+    popMatrix();
+    
     pushMatrix();
     translate(width/2, width/3.5, 0);
     rotateX(PI/5);
@@ -87,6 +108,7 @@ void draw() {
     pushMatrix();
     draw_pic(2);
     popMatrix();
+    
     ++time;
     if (time == 360*rotate_speed) time = 0;
   }
@@ -107,7 +129,7 @@ void menu() {
   draw_nn_menu();
   popMatrix();
   
-  pushMatrix();
+  
   //noStroke();
   button.display();
   button2.display();
@@ -115,30 +137,82 @@ void menu() {
   button4.display();
   button5.display();
   button6.display();
+  button_start.display();
+  
+  pushMatrix();
+    translate(150, 1050, 0);
+    ambient(yel_amb[0], yel_amb[1], yel_amb[2]);
+    specular(yel_spe[0], yel_spe[1], yel_spe[2]);
+    emissive(yel_emi[0], yel_emi[1], yel_emi[2]);
+    shininess(yel_shi);
+    sphere(100);
+    text("Start Learning", 50, 100, 50);
   popMatrix();
+  
+  textSize(180);
+  pushMatrix();
+    translate(350, 1000, 0);
+    ambient(red_amb[0], red_amb[1], red_amb[2]);
+    specular(red_spe[0], red_spe[1], red_spe[2]);
+    emissive(red_emi[0], red_emi[1], red_emi[2]);
+    shininess(red_shi);
+    sphere(30);
+    text("+", 50, -20, -100);
+    
+    translate(190, 0, 0);
+    sphere(30);
+    text("+", 75, -20, -100);
+    
+    translate(190, 0, 0);
+    sphere(30);
+    text("+", 100, -20, -100);
+  popMatrix();
+  
+  pushMatrix();
+    translate(350, 1080, 0);
+    ambient(blue_amb[0], blue_amb[1], blue_amb[2]);
+    specular(blue_spe[0], blue_spe[1], blue_spe[2]);
+    emissive(blue_emi[0], blue_emi[1], blue_emi[2]);
+    shininess(blue_shi);
+    sphere(30);
+    text("-", 50, -20, -100);
+    translate(190, 0, 0);
+    sphere(30);
+    text("-", 75, -20, -100);
+    translate(190, 0, 0);
+    sphere(30);
+    text("-", 100, -20, -100);
+  popMatrix();
+  
 
   ++time;
   if (time == 360*rotate_speed) time = 0;
 }
 void mouseClicked() {
   if (button.isClicked(mouseX, mouseY)) {
-    //number++;
-    println("clicked");
+    G_nn_form.set(1, G_nn_form.get(1)+1);
   }
   if (button2.isClicked(mouseX, mouseY)) {
-    println("clicked");
+    if (G_nn_form.get(1) >= 2) G_nn_form.set(1, G_nn_form.get(1)-1);
   }
   if (button3.isClicked(mouseX, mouseY)) {
-    println("clicked");
+    G_nn_form.set(2, G_nn_form.get(2)+1);
   }
   if (button4.isClicked(mouseX, mouseY)) {
-    println("clicked");
+    if (G_nn_form.get(2) >= 2) G_nn_form.set(2, G_nn_form.get(2)-1);
   }
   if (button5.isClicked(mouseX, mouseY)) {
-    println("clicked");
+    G_nn_form.set(3, G_nn_form.get(3)+1);
   }
   if (button6.isClicked(mouseX, mouseY)) {
-    println("clicked");
+    if (G_nn_form.get(3) >= 2) G_nn_form.set(3, G_nn_form.get(3)-1);
+  }
+  if (button_start.isClicked(mouseX, mouseY)) {
+    isMenu = false;
+    main_setup();
+  }
+  if (button_stop.isClicked(mouseX, mouseY)) {
+    isMenu = true;
   }
 }
 
@@ -159,9 +233,9 @@ class Button3D {
   void display() {
     pushMatrix();
     translate(x, y, z);
-    //fill(200, 0, 0, 0);
-    fill(200);
-    box(w, h, 10);
+    fill(0, 0, 0, 0);
+    //fill(200);
+    //box(w, h, 10);
     fill(0);
     textSize(24);
     textAlign(CENTER, CENTER);
@@ -380,10 +454,10 @@ void draw_nn() {
     }
 
     //edge
-    color c = color(100, 100, 100);
+    color c = color(100, 100, 100); 
     for (int i=0; i<G_nn_form.get(lay); ++i) {
       for (int j=0; j<G_nn_form.get(lay+1); ++j) {
-        float num = G_nn.get(lay).w.get(i).get(j).floatValue();
+        float num = G_nn.get(lay).w.get(i).get(j).floatValue();//
         if (num < 0) {
           num *= -1;
           c = color(min((int)((3-num) * 255/ 4.0), 255), min((int)((3-num) * 255/ 4.0), 255), 255);
