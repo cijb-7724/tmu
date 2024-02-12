@@ -31,16 +31,14 @@ int blue_shi = 100;
 
 ArrayList<ArrayList<Double>> G_x = initial_AAD(0, 0, 0);
 ArrayList<ArrayList<Double>> G_t = initial_AAD(0, 0, 0);
-double G_eta = 0.03, G_attenuation = 0.74;
-int G_n = 3000;
+double G_eta = 0.03, G_attenuation = 0.7;
+int G_n = 30000;
 int G_show_interval = 500;
 int G_learning_plan = 500;
 int G_loop = 4000;
 int G_loop_i = 0;
-int G_batch_size = 32;
+int G_batch_size = 132;
 ArrayList<Integer> G_nn_form = new ArrayList<> (Arrays.asList(2, 6, 8, 4, 1));
-//ArrayList<Integer> G_nn_form = new ArrayList<> (Arrays.asList(2, 10, 20, 10, 1));
-//ArrayList<Integer> G_nn_form = new ArrayList<> (Arrays.asList(2, 1, 2, 1, 1));
 int G_depth = G_nn_form.size()-1;
 
 Layer layer = new Layer();
@@ -645,6 +643,10 @@ public class Layer {
 }
 
 void main_setup() {
+  G_loop_i = 0;
+  G_id = new ArrayList<>();
+  G_eta = 0.03;
+  G_attenuation = 0.7;
   for (int i=0; i<G_n; ++i) {
     G_id.add(i);
   }
@@ -761,7 +763,7 @@ double estimate_function(double px, double py) {
     if (k < G_depth-1) G_nn.get(k).x = hm_tanh(G_nn.get(k).a);
     else G_nn.get(k).x = hm_identity(G_nn.get(k).a);
   }
-  return G_nn.get(G_depth-1).x.get(0).get(0)+0.5;
+  return G_nn.get(G_depth-1).x.get(0).get(0)+0.3;
 }
 
 void mouseReleased() {
@@ -1064,7 +1066,9 @@ public class Handle {
 //  ####      #####   ##   ##    ####    ####     ####     #####   ##   ##
 Random random = new Random(0);
 double rand() {
-  return -10 + 20 * random.nextDouble();
+  //return -10 + 20 * random.nextDouble();
+  return -15 + 30 * random.nextDouble();
+  
 }
 double gaussianDistribution(double mu, double sig) {
   double u1 = 1.0 - random.nextDouble();
