@@ -1,13 +1,22 @@
+## mainの説明
 ```Java
 void setup()
 void draw()
+```
+
+## menu
+```Java
 void menu()
 void mouseClicked()
-void draw_pic(float up)
+void draw_pic()
+void draw_nn_menu()
+```
+## nn
+```Java
 void draw_function()
 void draw_estimated_function()
 void draw_nn()
-void draw_nn_menu()
+float r_help()
 void draw_lines()
 float dot()
 
