@@ -14,6 +14,7 @@ void draw_estimated_function()
 ```
 ## nn
 ```Java
+void return_menu_button()
 void draw_function()
 void draw_nn()
 float r_help()
