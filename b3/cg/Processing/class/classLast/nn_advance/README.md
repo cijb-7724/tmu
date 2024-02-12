@@ -10,11 +10,11 @@ void menu()
 void mouseClicked()
 void draw_pic()
 void draw_nn_menu()
+void draw_estimated_function()
 ```
 ## nn
 ```Java
 void draw_function()
-void draw_estimated_function()
 void draw_nn()
 float r_help()
 void draw_lines()
