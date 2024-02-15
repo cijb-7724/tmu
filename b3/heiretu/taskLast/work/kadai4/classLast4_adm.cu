@@ -6,8 +6,8 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 
-#define grid 16
-#define block 8
+#define grid 128
+#define block 64
 
 #define Nx block*grid
 #define Ny block*grid

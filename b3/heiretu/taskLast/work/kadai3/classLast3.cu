@@ -12,7 +12,6 @@
 #define Nx block*grid
 #define Ny block*grid
 
-
 #define Db_x block
 #define Db_y 1
 #define Db_z 1
@@ -30,35 +29,35 @@ float timer;
 __global__ void adder(long *vecd) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
 	int j = blockIdx.y * blockDim.y + threadIdx.y;
-    vecd[i*grid*block+j] = (i-j)*(i-j);
+    vecd[i*Nx+j] = (i-j)*(i-j);
 }
 
 int main(int argc, char **argv) {
     cudaSetDevice(0);
 
     long *vec, *vecd;
-    int n = grid * block;  // ƒf[ƒ^‚Ì”
-    int size = n * n * sizeof(long); // ƒf[ƒ^‚ÌƒTƒCƒY
+    int n = grid * block;  // ï¿½fï¿½[ï¿½^ï¿½Ìï¿½
+    int size = n * n * sizeof(long); // ï¿½fï¿½[ï¿½^ï¿½ÌƒTï¿½Cï¿½Y
 
     cudaEventCreate(&start);
     cudaEventCreate(&end);
 
     printf("\nCalculation Start\n");
 
-    vec = (long *)malloc(size);  // ƒzƒXƒgƒƒ‚ƒŠ‚ÌŠm•Û
+    vec = (long *)malloc(size);  // ï¿½zï¿½Xï¿½gï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ÌŠmï¿½ï¿½
 
-    cudaMalloc(&vecd, size);  // ƒfƒoƒCƒXƒƒ‚ƒŠ‚ÌŠm•Û
+    cudaMalloc(&vecd, size);  // ï¿½fï¿½oï¿½Cï¿½Xï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ÌŠmï¿½ï¿½
 	cudaMemcpy(vecd, vec, size, cudaMemcpyHostToDevice);
     cudaEventRecord(start, 0);
 
 
-    adder<<<Dg ,Db>>>(vecd);  // ƒJ[ƒlƒ‹‚ÌÀs
+    adder<<<Dg ,Db>>>(vecd);  // ï¿½Jï¿½[ï¿½lï¿½ï¿½ï¿½Ìï¿½ï¿½s
 
-    cudaMemcpy(vec, vecd, size, cudaMemcpyDeviceToHost);  // Œ‹‰Ê‚ÌƒfƒoƒCƒX‚©‚çƒzƒXƒg‚Ö‚ÌƒRƒs[
+    cudaMemcpy(vec, vecd, size, cudaMemcpyDeviceToHost);  // ï¿½ï¿½ï¿½Ê‚Ìƒfï¿½oï¿½Cï¿½Xï¿½ï¿½ï¿½ï¿½zï¿½Xï¿½gï¿½Ö‚ÌƒRï¿½sï¿½[
 
     long long sum = 0;
     for (int i = 0; i < n*n; ++i) {
-        sum += vec[i];  // Œ‹‰Ê‚ÌŒvZ
+        sum += vec[i];  // ï¿½ï¿½ï¿½Ê‚ÌŒvï¿½Z
     }
     printf("L   = %d\n", grid*block);
     printf("sum = %lld\n", sum);
