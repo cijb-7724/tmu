@@ -1,5 +1,5 @@
 /*
- * main.cu(convert_color.cu) : F•ÏŠ·
+ * main.cu(convert_color.cu) : è‰²å¤‰æ›
  * @ KLO lab. in TMU (2013/12/20[Fri])
  */
  
@@ -31,14 +31,14 @@
 dim3 Db(Db_x, Db_y, Db_z);
 dim3 Dg(Dg_x, Dg_y, Dg_z);
 
-float *h_IMG_input;	     /*  “ü—Íƒf[ƒ^—p(Host)  */
-float *h_IMG_output;     /*  o—Íƒf[ƒ^—p(Host)  */
+float *h_IMG_input;	     /*  å…¥åŠ›ãƒ‡ãƒ¼ã‚¿ç”¨(Host)  */
+float *h_IMG_output;     /*  å‡ºåŠ›ãƒ‡ãƒ¼ã‚¿ç”¨(Host)  */
 
-float *d_IMG_input;	     /*  “ü—Íƒf[ƒ^—p(Device)  */
-float *d_IMG_output;     /*  o—Íƒf[ƒ^—p(Device)  */
+float *d_IMG_input;	     /*  å…¥åŠ›ãƒ‡ãƒ¼ã‚¿ç”¨(Device)  */
+float *d_IMG_output;     /*  å‡ºåŠ›ãƒ‡ãƒ¼ã‚¿ç”¨(Device)  */
 
-cudaEvent_t start, end;	     /*  ŠÔŒv‘ª—p  */
-float timer;	     /*  ŠÔŒv‘ª—p  */
+cudaEvent_t start, end;	     /*  æ™‚é–“è¨ˆæ¸¬ç”¨  */
+float timer;	     /*  æ™‚é–“è¨ˆæ¸¬ç”¨  */
 
 int element = sizeof(float) * Nx * Ny;
 
@@ -46,7 +46,7 @@ float alpha = 2.f;
 
 
 /*
- * convert_color.cu : F•ÏŠ·
+ * convert_color.cu : è‰²å¤‰æ›
  */
 
 __global__ void convert_color
@@ -64,7 +64,7 @@ __global__ void convert_color
 }
 
 /*
- * ‚±‚±‚©‚çmain : F•ÏŠ·
+ * ã“ã“ã‹ã‚‰main : è‰²å¤‰æ›
  */
 
 int main
@@ -73,7 +73,7 @@ int main
 	char **argv  // Argument Vector
 )
 {
-	// óuÒ‚²‚Æ‚ÉGPU‚ªŠ„‚èU‚ç‚ê‚Ä‚¢‚é‚Ì‚ÅC’l‚ğ•ÏX‚µ‚Ä‰º‚³‚¢(0`3)
+	// å—è¬›è€…ã”ã¨ã«GPUãŒå‰²ã‚ŠæŒ¯ã‚‰ã‚Œã¦ã„ã‚‹ã®ã§ï¼Œå€¤ã‚’å¤‰æ›´ã—ã¦ä¸‹ã•ã„(0ï½3)
 	int GPU_Num = 0;
 
 	cudaSetDevice(GPU_Num);
@@ -84,40 +84,40 @@ int main
 
 	int i, j, ID;
 
-	// ƒfƒoƒCƒXiVRAM“àj‚É—v‘f‚ğŠm•Û
+	// ãƒ‡ãƒã‚¤ã‚¹ï¼ˆVRAMå†…ï¼‰ã«è¦ç´ ã‚’ç¢ºä¿
 	cudaMalloc((void **)&d_IMG_input, element);
 	cudaMalloc((void **)&d_IMG_output, element);
 
 	cudaMemset(d_IMG_input, 0, element);
 	cudaMemset(d_IMG_output, 0, element);
 
-	// ƒzƒXƒgiRAM“àj‚É—v‘f‚ğŠm•Û
+	// ãƒ›ã‚¹ãƒˆï¼ˆRAMå†…ï¼‰ã«è¦ç´ ã‚’ç¢ºä¿
 	cudaHostAlloc((void **)&h_IMG_input, element, cudaHostAllocPortable);
 	cudaHostAlloc((void **)&h_IMG_output, element, cudaHostAllocPortable);
 
 	memset(h_IMG_input, 0, element);
 	memset(h_IMG_output, 0, element);
 
-//ƒtƒ@ƒCƒ‹‚æ‚èƒf[ƒ^“ü—Í
-	FILE *fp;	     /*  “üoƒtƒ@ƒCƒ‹—p  */
+//ãƒ•ã‚¡ã‚¤ãƒ«ã‚ˆã‚Šãƒ‡ãƒ¼ã‚¿å…¥åŠ›
+	FILE *fp;	     /*  å…¥å‡ºãƒ•ã‚¡ã‚¤ãƒ«ç”¨  */
 
-	fp = fopen("./man1024.img", "r");     /*  “Ç‚İƒ‚[ƒh‚Åƒtƒ@ƒCƒ‹‚ğƒI[ƒvƒ“‚·‚é  */
+	fp = fopen("./man1024.img", "r");     /*  èª­è¾¼ã¿ãƒ¢ãƒ¼ãƒ‰ã§ãƒ•ã‚¡ã‚¤ãƒ«ã‚’ã‚ªãƒ¼ãƒ—ãƒ³ã™ã‚‹  */
 	if(fp == NULL) {
-		printf("ƒtƒ@ƒCƒ‹‚ğŠJ‚­‚±‚Æ‚ªo—ˆ‚Ü‚¹‚ñ‚Å‚µ‚½D\n");
+		printf("ãƒ•ã‚¡ã‚¤ãƒ«ã‚’é–‹ãã“ã¨ãŒå‡ºæ¥ã¾ã›ã‚“ã§ã—ãŸï¼\n");
 		return 0;
 	}
  
 	for(j = 0; j < Ny; j++){
 		for(i = 0; i < Nx; i++){
 			ID = i + j * Nx;
-			fscanf(fp, "%f", &(h_IMG_input[ID]) );     /*  1s“Ç‚Ş@¨ h_IMG_input[ID])‚É“ü‚ê‚é */
+			fscanf(fp, "%f", &(h_IMG_input[ID]) );     /*  1è¡Œèª­ã‚€ã€€â†’ h_IMG_input[ID])ã«å…¥ã‚Œã‚‹ */
 		}
 	}
 	
-	fclose(fp);     /*  ƒtƒ@ƒCƒ‹‚ğƒNƒ[ƒY‚·‚é  */
+	fclose(fp);     /*  ãƒ•ã‚¡ã‚¤ãƒ«ã‚’ã‚¯ãƒ­ãƒ¼ã‚ºã™ã‚‹  */
 
 	
-	// ‰‰ZŠÔ‚ğŒv‘ª‚·‚é‚½‚ß‚ÌcudaEventCreate‚ğÀs
+	// æ¼”ç®—æ™‚é–“ã‚’è¨ˆæ¸¬ã™ã‚‹ãŸã‚ã®cudaEventCreateã‚’å®Ÿè¡Œ
 	cudaEventCreate(&start);
 	cudaEventCreate(&end);
 
@@ -125,7 +125,7 @@ int main
 
 	cudaMemcpy(d_IMG_input, h_IMG_input, element, HTD);
 
-	// ‰‰ZŠÔ‚ğŒv‘ª‚·‚é‚½‚ß‚ÌcudaEventRecord‚ğÀs‚µŒvZ‚ÌŠJn‚ğ‹L˜^
+	// æ¼”ç®—æ™‚é–“ã‚’è¨ˆæ¸¬ã™ã‚‹ãŸã‚ã®cudaEventRecordã‚’å®Ÿè¡Œã—è¨ˆç®—ã®é–‹å§‹ã‚’è¨˜éŒ²
 	cudaEventRecord(start, 0);
 
 
@@ -134,10 +134,10 @@ int main
 
 	cudaThreadSynchronize();
 
-    // ‰‰ZŠÔ‚ğŒv‘ª‚·‚é‚½‚ß‚ÌcudaEventRecord‚ğÀs‚µŒvZ‚ÌI—¹‚ğ‹L˜^
+    // æ¼”ç®—æ™‚é–“ã‚’è¨ˆæ¸¬ã™ã‚‹ãŸã‚ã®cudaEventRecordã‚’å®Ÿè¡Œã—è¨ˆç®—ã®çµ‚äº†ã‚’è¨˜éŒ²
     cudaEventRecord(end, 0);
 
-    // ‰‰ZŠÔ‚ğZo
+    // æ¼”ç®—æ™‚é–“ã‚’ç®—å‡º
     cudaEventSynchronize(end);
     cudaEventElapsedTime(&timer, start, end);
 
@@ -148,18 +148,18 @@ int main
     /* File Output */
     cudaMemcpy(h_IMG_output, d_IMG_output, element, DTH);
 
-//o—Í—pƒf[ƒ^‚ğƒtƒ@ƒCƒ‹‚É‘‚«‚Ş
-    fp = fopen("output1024convert_gpu.img", "w");     /*  ‘‚İƒ‚[ƒh‚Åƒtƒ@ƒCƒ‹‚ğƒI[ƒvƒ“‚·‚é  */
+//å‡ºåŠ›ç”¨ãƒ‡ãƒ¼ã‚¿ã‚’ãƒ•ã‚¡ã‚¤ãƒ«ã«æ›¸ãè¾¼ã‚€
+    fp = fopen("output1024convert_gpu.img", "w");     /*  æ›¸è¾¼ã¿ãƒ¢ãƒ¼ãƒ‰ã§ãƒ•ã‚¡ã‚¤ãƒ«ã‚’ã‚ªãƒ¼ãƒ—ãƒ³ã™ã‚‹  */
    
     if(fp == NULL){
-        printf("ƒtƒ@ƒCƒ‹‚ğì‚ê‚Ü‚¹‚ñ‚Å‚µ‚½");
-        return 0;  /*  ‚±‚±‚ÅƒvƒƒOƒ‰ƒ€I—¹  */
+        printf("ãƒ•ã‚¡ã‚¤ãƒ«ã‚’ä½œã‚Œã¾ã›ã‚“ã§ã—ãŸ");
+        return 0;  /*  ã“ã“ã§ãƒ—ãƒ­ã‚°ãƒ©ãƒ çµ‚äº†  */
     }
 
     for(j = 0; j < Ny; j++){
 		for(i = 0; i < Nx; i++){
 			ID = i + j * Nx;
-			fprintf(fp, "%d\n", (unsigned char) h_IMG_output[ID]);     /*  1s‘‚İ@¨ h_IMG_output[ID])‚É“ü‚ê‚é */
+			fprintf(fp, "%d\n", (unsigned char) h_IMG_output[ID]);     /*  1è¡Œæ›¸è¾¼ã¿ã€€â†’ h_IMG_output[ID])ã«å…¥ã‚Œã‚‹ */
 		}
 	}
 

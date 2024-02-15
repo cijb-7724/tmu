@@ -32,13 +32,10 @@ float timer;
 // 	int j = blockIdx.y * blockDim.y + threadIdx.y;
 //     vecd[i*grid*block+j] = (i-j)*(i-j);
 // }
-__global__ void mult_matrix(int *a, int *b, int *c) {
+__global__ void adm_mult_matrix(int *a, int *b, int *c) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
 	int j = blockIdx.y * blockDim.y + threadIdx.y;
-    for (int k=0; k<grid*block; ++k) {
-        c[i*grid*block + j] += a[grid*block*i+k]*b[grid*block*k+j];
-        // c[0] += 1;
-    }
+    c[i*grid*block + j] += a[grid*block*i+j]*b[grid*block*i+j];
 }
 
 
@@ -48,8 +45,8 @@ int main(int argc, char **argv) {
     // int *vec, *vecd;
     int *a, *b, *c;
     int *ad, *bd, *cd;
-    int n = grid * block;  // ƒf[ƒ^‚Ì”
-    int size = n * n * sizeof(int); // ƒf[ƒ^‚ÌƒTƒCƒY
+    int n = grid * block;  // ï¿½fï¿½[ï¿½^ï¿½Ìï¿½
+    int size = n * n * sizeof(int); // ï¿½fï¿½[ï¿½^ï¿½ÌƒTï¿½Cï¿½Y
 
     cudaEventCreate(&start);
     cudaEventCreate(&end);
@@ -57,7 +54,7 @@ int main(int argc, char **argv) {
     printf("matrix adm multi\n");
     printf("\nCalculation Start\n");
 
-    // vec = (int *)malloc(size);  // ƒzƒXƒgƒƒ‚ƒŠ‚ÌŠm•Û
+    // vec = (int *)malloc(size);  // ï¿½zï¿½Xï¿½gï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ÌŠmï¿½ï¿½
     a = (int *) malloc(size);
     b = (int *) malloc(size);
     c = (int *) malloc(size);
@@ -68,7 +65,7 @@ int main(int argc, char **argv) {
     }
     
 
-    // cudaMalloc(&vecd, size);  // ƒfƒoƒCƒXƒƒ‚ƒŠ‚ÌŠm•Û
+    // cudaMalloc(&vecd, size);  // ï¿½fï¿½oï¿½Cï¿½Xï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ÌŠmï¿½ï¿½
 	// cudaMemcpy(vecd, vec, size, cudaMemcpyHostToDevice);
     // cudaEventRecord(start, 0);
 
@@ -82,16 +79,16 @@ int main(int argc, char **argv) {
     cudaEventRecord(start, 0);
     
 
-    mult_matrix<<<Dg, Db>>>(ad, bd, cd);
+    adm_mult_matrix<<<Dg, Db>>>(ad, bd, cd);
 
-    // cudaMemcpy(vec, vecd, size, cudaMemcpyDeviceToHost);  // Œ‹‰Ê‚ÌƒfƒoƒCƒX‚©‚çƒzƒXƒg‚Ö‚ÌƒRƒs[
+    // cudaMemcpy(vec, vecd, size, cudaMemcpyDeviceToHost);  // ï¿½ï¿½ï¿½Ê‚Ìƒfï¿½oï¿½Cï¿½Xï¿½ï¿½ï¿½ï¿½zï¿½Xï¿½gï¿½Ö‚ÌƒRï¿½sï¿½[
     cudaMemcpy(a, ad, size, cudaMemcpyDeviceToHost);
     cudaMemcpy(b, bd, size, cudaMemcpyDeviceToHost);
     cudaMemcpy(c, cd, size, cudaMemcpyDeviceToHost);
 
     // long long sum = 0;
     // for (int i = 0; i < n*n; ++i) {
-    //     sum += vec[i];  // Œ‹‰Ê‚ÌŒvZ
+    //     sum += vec[i];  // ï¿½ï¿½ï¿½Ê‚ÌŒvï¿½Z
     // }
     // printf("sum = %lld\n", sum);
     printf("c[%d][%d] = %d\n", 0, 0, c[0]);
