@@ -1,114 +1,83 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <math.h>
-
 #include <cuda.h>
 #include <cuda_runtime.h>
 
-#define grid 128
-#define block 64
+#define GRID_SIZE 128
+#define BLOCK_SIZE 64
+#define MATRIX_SIZE (BLOCK_SIZE * GRID_SIZE)
 
-#define Nx block*grid
-#define Ny block*grid
-
-
-#define Db_x block
-#define Db_y 1
-#define Db_z 1
-
-#define Dg_x (Nx / Db_x)
-#define Dg_y (Ny / Db_y)
-#define Dg_z 1
-
-dim3 Db(Db_x, Db_y, Db_z);
-dim3 Dg(Dg_x, Dg_y, Dg_z);
+dim3 Db(BLOCK_SIZE, 1, 1);
+dim3 Dg(GRID_SIZE, GRID_SIZE, 1);
 
 cudaEvent_t start, end;
 float timer;
 
-// __global__ void adder(int *vecd) {
-//     int i = blockIdx.x * blockDim.x + threadIdx.x;
-// 	int j = blockIdx.y * blockDim.y + threadIdx.y;
-//     vecd[i*grid*block+j] = (i-j)*(i-j);
-// }
-__global__ void adm_mult_matrix(int *a, int *b, int *c) {
+// CUDAカーネル: 2つの行列の要素ごとの掛け算
+__global__ void matrix_elementwise_multiply(int *a, int *b, int *c) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
 	int j = blockIdx.y * blockDim.y + threadIdx.y;
-    c[i*grid*block + j] += a[grid*block*i+j]*b[grid*block*i+j];
+    c[i * MATRIX_SIZE + j] = a[i * MATRIX_SIZE + j] * b[i * MATRIX_SIZE + j];
 }
-
 
 int main(int argc, char **argv) {
     cudaSetDevice(0);
 
-    // int *vec, *vecd;
-    int *a, *b, *c;
-    int *ad, *bd, *cd;
-    int n = grid * block;  // �f�[�^�̐�
-    int size = n * n * sizeof(int); // �f�[�^�̃T�C�Y
+    int *a, *b, *c;  // 行列 a, b, c
+    int *ad, *bd, *cd;  // デバイス用行列ポインタ
+    int size = MATRIX_SIZE * MATRIX_SIZE * sizeof(int); // 行列のサイズ
 
+    // イベントの作成
     cudaEventCreate(&start);
     cudaEventCreate(&end);
 
-    printf("matrix adm multi\n");
+    printf("Matrix Element-wise Multiplication\n");
     printf("\nCalculation Start\n");
 
-    // vec = (int *)malloc(size);  // �z�X�g�������̊m��
-    a = (int *) malloc(size);
-    b = (int *) malloc(size);
-    c = (int *) malloc(size);
+    // ホストメモリ上の行列の動的確保
+    a = (int *)malloc(size);
+    b = (int *)malloc(size);
+    c = (int *)malloc(size);
 
-    for (int i=0; i<n*n; ++i) {
+    // 初期化
+    for (int i = 0; i < MATRIX_SIZE * MATRIX_SIZE; ++i) {
         a[i] = b[i] = 1;
         c[i] = 0;
     }
-    
 
-    // cudaMalloc(&vecd, size);  // �f�o�C�X�������̊m��
-	// cudaMemcpy(vecd, vec, size, cudaMemcpyHostToDevice);
-    // cudaEventRecord(start, 0);
-
+    // デバイスメモリ上の行列の動的確保
     cudaMalloc(&ad, size);
     cudaMalloc(&bd, size);
     cudaMalloc(&cd, size);
+
+    // ホストからデバイスへの転送
     cudaMemcpy(ad, a, size, cudaMemcpyHostToDevice);
     cudaMemcpy(bd, b, size, cudaMemcpyHostToDevice);
     cudaMemcpy(cd, c, size, cudaMemcpyHostToDevice);
 
+    // カーネル実行時間計測開始
     cudaEventRecord(start, 0);
-    
 
-    adm_mult_matrix<<<Dg, Db>>>(ad, bd, cd);
+    // カーネル呼び出し
+    matrix_elementwise_multiply<<<Dg, Db>>>(ad, bd, cd);
 
-    // cudaMemcpy(vec, vecd, size, cudaMemcpyDeviceToHost);  // ���ʂ̃f�o�C�X����z�X�g�ւ̃R�s�[
-    cudaMemcpy(a, ad, size, cudaMemcpyDeviceToHost);
-    cudaMemcpy(b, bd, size, cudaMemcpyDeviceToHost);
+    // 結果をデバイスからホストに転送
     cudaMemcpy(c, cd, size, cudaMemcpyDeviceToHost);
 
-    // long long sum = 0;
-    // for (int i = 0; i < n*n; ++i) {
-    //     sum += vec[i];  // ���ʂ̌v�Z
-    // }
-    // printf("sum = %lld\n", sum);
-    printf("c[%d][%d] = %d\n", 0, 0, c[0]);
-    printf("c[%d][%d] = %d\n", n-1, n-1, c[n*n-1]);
-    
-
-    
-
+    // カーネル実行時間計測終了
     cudaEventRecord(end, 0);
     cudaEventSynchronize(end);
     cudaEventElapsedTime(&timer, start, end);
+
+    // 結果の表示
+    printf("c[0][0] = %d\n", c[0]);
+    printf("c[%d][%d] = %d\n", MATRIX_SIZE - 1, MATRIX_SIZE - 1, c[MATRIX_SIZE * MATRIX_SIZE - 1]);
+
+    // 実行時間の表示
     printf("\nCalculation End\n");
     printf("\nProcessing Time : %.3f [msec]\n", timer);
 
-    cudaEventDestroy(start);
-    cudaEventDestroy(end);
-
-    // free(vec);
-    // cudaFree(vecd);
-
+    // メモリの解放
     free(a);
     free(b);
     free(c);
@@ -116,6 +85,9 @@ int main(int argc, char **argv) {
     cudaFree(bd);
     cudaFree(cd);
     
+    // イベントの破棄
+    cudaEventDestroy(start);
+    cudaEventDestroy(end);
 
     return 0;
 }

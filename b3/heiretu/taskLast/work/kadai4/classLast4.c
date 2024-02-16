@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define exp 11
-#define L (long long)1<<exp // L次正方行列のサイズ
+#define EXPONENT 11
+#define MATRIX_SIZE (1 << EXPONENT) // L次正方行列のサイズ
 
 // 2次元配列の動的確保
 int** allocate_matrix(int rows, int cols) {
@@ -31,32 +31,29 @@ void free_matrix(int** matrix, int rows) {
 }
 
 int main() {
-    // int a[L][L]; // 行列1
-    // int b[L][L]; // 行列2
-    // int c[L][L];  // 結果の行列
     int **a, **b, **c;
     long long i, j, k;
 
-    a = allocate_matrix(L, L);
-    b = allocate_matrix(L, L);
-    c = allocate_matrix(L, L);
+    a = allocate_matrix(MATRIX_SIZE, MATRIX_SIZE);
+    b = allocate_matrix(MATRIX_SIZE, MATRIX_SIZE);
+    c = allocate_matrix(MATRIX_SIZE, MATRIX_SIZE);
 
-    printf("L = 2^%d = %lld\n", exp, L);
+    printf("L = 2^%d = %lld\n", EXPONENT, MATRIX_SIZE);
     
 
     // すべての要素が1の行列を生成
-    for (i=0; i<L; ++i) {
-        for (j=0; j<L; ++j) {
+    for (i = 0; i < MATRIX_SIZE; ++i) {
+        for (j = 0; j < MATRIX_SIZE; ++j) {
             a[i][j] = 1;
             b[i][j] = 1;
         }
     }
     clock_t start = clock(); // 開始時間を記録
     // 行列の掛け算
-    for (i=0; i<L; ++i) {
-        for (j=0; j<L; ++j) {
+    for (i = 0; i < MATRIX_SIZE; ++i) {
+        for (j = 0; j < MATRIX_SIZE; ++j) {
             c[i][j] = 0;
-            for (k=0; k<L;k++) {
+            for (k = 0; k < MATRIX_SIZE; k++) {
                 c[i][j] += a[i][k] * b[k][j];
             }
         }
@@ -66,9 +63,13 @@ int main() {
     double cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC; // CPU時間を計算
 
     printf("c[%d][%d] = %d\n", 0, 0, c[0][0]);
-    printf("c[%d][%d] = %d\n", (L)-1, (L)-1, c[(L)-1][(L)-1]);
+    printf("c[%d][%d] = %d\n", MATRIX_SIZE - 1, MATRIX_SIZE - 1, c[MATRIX_SIZE - 1][MATRIX_SIZE - 1]);
     printf("time = %f[sec]\n", cpu_time_used);
     
+    // 2次元配列の解放
+    free_matrix(a, MATRIX_SIZE);
+    free_matrix(b, MATRIX_SIZE);
+    free_matrix(c, MATRIX_SIZE);
 
     return 0;
 }

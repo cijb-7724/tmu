@@ -1,8 +1,8 @@
 /*
- * main.cu(convert_color.cu) : �F�ϊ�
+ * main.cu(convert_color.cu) : メイン
  * @ KLO lab. in TMU (2013/12/20[Fri])
  */
- 
+
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -31,14 +31,14 @@
 dim3 Db(Db_x, Db_y, Db_z);
 dim3 Dg(Dg_x, Dg_y, Dg_z);
 
-float *h_IMG_input;	     /*  ���̓f�[�^�p(Host)  */
-float *h_IMG_output;     /*  �o�̓f�[�^�p(Host)  */
+float *h_IMG_input;      /* 入力画像のポインタ(Host) */
+float *h_IMG_output;     /* 出力画像のポインタ(Host) */
 
-float *d_IMG_input;	     /*  ���̓f�[�^�p(Device)  */
-float *d_IMG_output;     /*  �o�̓f�[�^�p(Device)  */
+float *d_IMG_input;      /* 入力画像のポインタ(Device) */
+float *d_IMG_output;     /* 出力画像のポインタ(Device) */
 
-cudaEvent_t start, end;	     /*  ���Ԍv���p  */
-float timer;	     /*  ���Ԍv���p  */
+cudaEvent_t start, end;     /* 測定用イベント */
+float timer;     /* 測定用イベント */
 
 int element = sizeof(float) * Nx * Ny;
 
@@ -46,101 +46,98 @@ float alpha = 2.f;
 
 
 /*
- * convert_color.cu : �F�ϊ�
+ * convert_color.cu : カーネル
  */
 
 __global__ void convert_rotate
 (
-	float *d_IMG_input,
-	float *d_IMG_output
+    float *d_IMG_input,
+    float *d_IMG_output
 )
 {
-	int X, Y, ID, toID;
+    int X, Y, ID, toID;
 
-	X = threadIdx.x + (blockIdx.x * blockDim.x);
-	Y = threadIdx.y + (blockIdx.y * blockDim.y);
-	ID = X + Y * Nx;
-	toID = Y+ (Nx-X-1)*Nx;
-	if (toID <0 || toID >= Nx*Nx) printf("toID %d\n", toID);
-	d_IMG_output[ID] = d_IMG_input[toID];
-	// d_IMG_output[ID] = d_IMG_input[ID];
+    X = threadIdx.x + (blockIdx.x * blockDim.x);
+    Y = threadIdx.y + (blockIdx.y * blockDim.y);
+    ID = X + Y * Nx;
+    toID = Y + (Nx - X - 1) * Nx;
+    if (toID < 0 || toID >= Nx * Nx) printf("toID %d\n", toID);
+    d_IMG_output[ID] = d_IMG_input[toID];
 }
 
 /*
- * ��������main : �F�ϊ�
+ * メイン関数main : メイン
  */
 
 int main
 (
-	int    argc, // Argument Count
-	char **argv  // Argument Vector
+    int    argc, // Argument Count
+    char **argv  // Argument Vector
 )
 {
-	// ��u�҂��Ƃ�GPU������U���Ă���̂ŁC�l��ύX���ĉ�����(0�`3)
-	int GPU_Num = 0;
+    // 使用するGPUの選択
+    int GPU_Num = 0;
 
-	cudaSetDevice(GPU_Num);
+    cudaSetDevice(GPU_Num);
 
-	printf("convert_rotate.cu\n");
-	printf("Nx = %d, Ny = %d\n", Nx, Ny);
-	printf("Number %d GPU working\n", GPU_Num);
+    printf("convert_rotate.cu\n");
+    printf("Nx = %d, Ny = %d\n", Nx, Ny);
+    printf("Number %d GPU working\n", GPU_Num);
 
-	int i, j, ID;
+    int i, j, ID;
 
-	// �f�o�C�X�iVRAM���j�ɗv�f���m��
-	cudaMalloc((void **)&d_IMG_input, element);
-	cudaMalloc((void **)&d_IMG_output, element);
+    // デバイスメモリの確保
+    cudaMalloc((void **)&d_IMG_input, element);
+    cudaMalloc((void **)&d_IMG_output, element);
 
-	cudaMemset(d_IMG_input, 0, element);
-	cudaMemset(d_IMG_output, 0, element);
+    cudaMemset(d_IMG_input, 0, element);
+    cudaMemset(d_IMG_output, 0, element);
 
-	// �z�X�g�iRAM���j�ɗv�f���m��
-	cudaHostAlloc((void **)&h_IMG_input, element, cudaHostAllocPortable);
-	cudaHostAlloc((void **)&h_IMG_output, element, cudaHostAllocPortable);
+    // ホストメモリの確保
+    cudaHostAlloc((void **)&h_IMG_input, element, cudaHostAllocPortable);
+    cudaHostAlloc((void **)&h_IMG_output, element, cudaHostAllocPortable);
 
-	memset(h_IMG_input, 0, element);
-	memset(h_IMG_output, 0, element);
+    memset(h_IMG_input, 0, element);
+    memset(h_IMG_output, 0, element);
 
-//�t�@�C�����f�[�^����
-	FILE *fp;	     /*  ���o�t�@�C���p  */
+    // ファイル読み込み
+    FILE *fp;     /* ファイルポインタ */
 
-	fp = fopen("./man1024.img", "r");     /*  �Ǎ��݃��[�h�Ńt�@�C�����I�[�v������  */
-	if(fp == NULL) {
-		printf("�t�@�C�����J�����Ƃ��o���܂���ł����D\n");
-		return 0;
-	}
- 
-	for(j = 0; j < Ny; j++){
-		for(i = 0; i < Nx; i++){
-			ID = i + j * Nx;
-			fscanf(fp, "%f", &(h_IMG_input[ID]) );     /*  1�s�ǂށ@�� h_IMG_input[ID])�ɓ���� */
-		}
-	}
-	
-	fclose(fp);     /*  �t�@�C�����N���[�Y����  */
+    fp = fopen("./man1024.img", "r");     /* 入力ファイルを読み込む */
+    if (fp == NULL) {
+        printf("ファイルを開けませんでした\n");
+        return 0;
+    }
 
-	
-	// ���Z���Ԃ��v�����邽�߂�cudaEventCreate�����s
-	cudaEventCreate(&start);
-	cudaEventCreate(&end);
+    for (j = 0; j < Ny; j++) {
+        for (i = 0; i < Nx; i++) {
+            ID = i + j * Nx;
+            fscanf(fp, "%f", &(h_IMG_input[ID]));     /* 1要素読み込んで h_IMG_input[ID] に格納 */
+        }
+    }
 
-	printf("\nCalculation Start\n");
+    fclose(fp);     /* ファイルをクローズ */
 
-	cudaMemcpy(d_IMG_input, h_IMG_input, element, HTD);
+    // 作業開始のイベントを作成
+    cudaEventCreate(&start);
+    cudaEventCreate(&end);
 
-	// ���Z���Ԃ��v�����邽�߂�cudaEventRecord�����s���v�Z�̊J�n���L�^
-	cudaEventRecord(start, 0);
+    printf("\nCalculation Start\n");
 
+    cudaMemcpy(d_IMG_input, h_IMG_input, element, HTD);
 
-	/* image processing */
-	convert_rotate <<< Dg, Db >>> (d_IMG_input, d_IMG_output);
+    // 処理の開始時間を記録するイベントを記録
+    cudaEventRecord(start, 0);
 
-	cudaThreadSynchronize();
+    /* 画像処理 */
+    convert_rotate <<<Dg, Db>>> (d_IMG_input, d_IMG_output);
 
-    // ���Z���Ԃ��v�����邽�߂�cudaEventRecord�����s���v�Z�̏I�����L�^
+    cudaThreadSynchronize();
+
+    // 処理の終了時間を記録するイベントを記録
     cudaEventRecord(end, 0);
 
-    // ���Z���Ԃ��Z�o
+    // イベントの同期
     cudaEventSynchronize(end);
     cudaEventElapsedTime(&timer, start, end);
 
@@ -148,29 +145,31 @@ int main
 
     printf("\nProcessing Time : %.3f [msec]\n", timer);
 
-    /* File Output */
+    /* ファイル出力 */
     cudaMemcpy(h_IMG_output, d_IMG_output, element, DTH);
 
-//�o�͗p�f�[�^���t�@�C���ɏ�������
-    fp = fopen("output1024convert_gpu_5a.img", "w");     /*  �����݃��[�h�Ńt�@�C�����I�[�v������  */
+    // 出力ファイルを開く
+    fp = fopen("output1024convert_gpu_5a.img", "w");
    
-    if(fp == NULL){
-        printf("�t�@�C�������܂���ł���");
-        return 0;  /*  �����Ńv���O�����I��  */
+    if (fp == NULL) {
+        printf("ファイルを開けませんでした");
+        return 0;
     }
 
-    for(j = 0; j < Ny; j++){
-		for(i = 0; i < Nx; i++){
-			ID = i + j * Nx;
-			fprintf(fp, "%d\n", (unsigned char) h_IMG_output[ID]);     /*  1�s�����݁@�� h_IMG_output[ID])�ɓ���� */
-		}
-	}
+    for (j = 0; j < Ny; j++) {
+        for (i = 0; i < Nx; i++) {
+            ID = i + j * Nx;
+            fprintf(fp, "%d\n", (unsigned char) h_IMG_output[ID]);     /* 1要素書き出す */
+        }
+    }
 
-	fclose(fp);
+    fclose(fp);
 
+    // デバイスメモリの解放
     cudaFree(d_IMG_input);
     cudaFree(d_IMG_output);
 
+    // ホストメモリの解放
     cudaFreeHost(h_IMG_input);
     cudaFreeHost(h_IMG_output);
 
